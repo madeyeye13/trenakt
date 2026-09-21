@@ -10,7 +10,7 @@
 
     $promotingItems = [
         ['label' => 'Home', 'route' => 'dashboard', 'icon' => 'grid', 'live' => true],
-        ['label' => 'Campaigns', 'route' => null, 'icon' => 'briefcase', 'live' => false],
+        ['label' => 'Campaigns', 'route' => 'campaigns.index', 'icon' => 'briefcase', 'live' => true],
         ['label' => 'Wallet', 'route' => null, 'icon' => 'wallet', 'live' => false],
         ['label' => 'Profile', 'route' => null, 'icon' => 'user', 'live' => false],
     ];

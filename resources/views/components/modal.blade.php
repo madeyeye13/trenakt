@@ -1,9 +1,20 @@
 @props(['name', 'maxWidth' => 'md'])
 
+@php
+    $maxWidthClass = match ($maxWidth) {
+        'sm' => 'max-w-sm',
+        'md' => 'max-w-md',
+        'lg' => 'max-w-lg',
+        'xl' => 'max-w-xl',
+        '2xl' => 'max-w-2xl',
+        default => 'max-w-md',
+    };
+@endphp
+
 <div
     x-data="{ show: false }"
-    x-on:open-modal.window="if ($event.detail === '{{ $name }}') show = true"
-    x-on:close-modal.window="if (!$event.detail || $event.detail === '{{ $name }}') show = false"
+    x-on:open-modal.window="if ($event.detail.name === '{{ $name }}') show = true"
+    x-on:close-modal.window="if (!$event.detail?.name || $event.detail.name === '{{ $name }}') show = false"
     x-on:keydown.escape.window="show = false"
     x-show="show"
     x-cloak
@@ -12,7 +23,7 @@
 
     <div class="flex min-h-screen items-center justify-center p-4">
         <div @click.stop x-show="show" x-transition
-            class="relative bg-white dark:bg-trenakt-surface-dark rounded-lg shadow-xl w-full max-w-{{ $maxWidth }} p-6">
+            class="relative bg-white dark:bg-trenakt-surface-dark rounded-lg shadow-xl w-full {{ $maxWidthClass }} p-6">
             {{ $slot }}
         </div>
     </div>

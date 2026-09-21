@@ -12,13 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['admin' => \App\Http\Middleware\EnsureUserIsAdmin::class]);
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'business' => \App\Http\Middleware\EnsureBusinessMode::class,
+        ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
             return $request->getHost() === 'admin.trenakt.test'
                 ? route('admin.login')
                 : route('login');
         });
+
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/paystack',
+            'webhooks/flutterwave',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

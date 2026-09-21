@@ -36,7 +36,7 @@
                     </tr>
                     <tr>
                         <td style="padding: 8px 40px 32px 40px;">
-                            <a href="{{ config('app.url') }}/dashboard" style="display:inline-block; background-color:#0F8A4F; color:#ffffff; text-decoration:none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600;">
+                            <a href="{{ route('dashboard') }}" style="display:inline-block; background-color:#0F8A4F; color:#ffffff; text-decoration:none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600;">
                                 Go to your dashboard
                             </a>
                         </td>
