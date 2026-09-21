@@ -1,9 +1,80 @@
+@font-face {
+    font-family: 'Inter Variable';
+    src: url('../fonts/InterVariable.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-trenakt-primary: #0F8A4F;
+    --color-trenakt-primary-light: #E6F4EC;
+    --color-trenakt-primary-dark: #0B6B3C;
+
+    --color-trenakt-accent: #FF5A1F;
+    --color-trenakt-accent-light: #FBA371;
+    --color-trenakt-accent-dark: #CC4718;
+
+    --color-trenakt-dark: #14130F;
+    --color-trenakt-bg: #F7F4EE;
+    --color-trenakt-surface-dark: #1C1B16;
+
+    --color-trenakt-success: #16A34A;
+    --color-trenakt-success-light: #DCFCE7;
+    --color-trenakt-warning: #D97706;
+    --color-trenakt-warning-light: #FEF3C7;
+    --color-trenakt-danger: #DC2626;
+    --color-trenakt-danger-light: #FEE2E2;
+    --color-trenakt-info: #2563EB;
+    --color-trenakt-info-light: #DBEAFE;
+
+    --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+    body {
+        font-feature-settings: "salt" 1;
+        font-optical-sizing: auto;
+    }
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .btn-fill {
+        position: relative;
+        overflow: hidden;
+        z-index: 0;
+    }
+    .btn-fill::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--btn-fill-color, var(--color-trenakt-primary-dark));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.35s ease;
+        z-index: -1;
+    }
+    .btn-fill:hover::before {
+        transform: scaleX(1);
+    }
+
+    [data-reveal] {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    [data-reveal].revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
