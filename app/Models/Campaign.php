@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'user_id', 'campaign_category_id', 'title', 'description',
+    'user_id', 'campaign_category_id', 'title', 'description', 'steps',
     'rate_per_participant', 'target_participants', 'total_budget',
     'platform_fee_amount', 'status', 'rejection_reason',
     'submitted_at', 'reviewed_at', 'reviewed_by',
@@ -19,6 +19,7 @@ class Campaign extends Model
     protected function casts(): array
     {
         return [
+            'steps' => 'array',
             'rate_per_participant' => 'decimal:2',
             'total_budget' => 'decimal:2',
             'platform_fee_amount' => 'decimal:2',

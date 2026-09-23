@@ -3,16 +3,16 @@
 
     $earningItems = [
         ['label' => 'Home', 'route' => 'dashboard', 'icon' => 'grid', 'live' => true],
-        ['label' => 'Tasks', 'route' => null, 'icon' => 'briefcase', 'live' => false],
-        ['label' => 'Wallet', 'route' => null, 'icon' => 'wallet', 'live' => false],
-        ['label' => 'Profile', 'route' => null, 'icon' => 'user', 'live' => false],
+        ['label' => 'Tasks', 'route' => 'tasks.discover', 'icon' => 'briefcase', 'live' => true, 'extraRoutes' => ['tasks.index']],
+        ['label' => 'Earnings', 'route' => 'earnings.index', 'icon' => 'wallet', 'live' => true],
+        ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'live' => true],
     ];
 
     $promotingItems = [
         ['label' => 'Home', 'route' => 'dashboard', 'icon' => 'grid', 'live' => true],
         ['label' => 'Campaigns', 'route' => 'campaigns.index', 'icon' => 'briefcase', 'live' => true],
-        ['label' => 'Wallet', 'route' => null, 'icon' => 'wallet', 'live' => false],
-        ['label' => 'Profile', 'route' => null, 'icon' => 'user', 'live' => false],
+        ['label' => 'Wallet', 'route' => 'wallet.index', 'icon' => 'wallet', 'live' => true],
+        ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'live' => true],
     ];
 
     $items = $mode === 'business' ? $promotingItems : $earningItems;
@@ -23,9 +23,12 @@
     <div class="grid grid-cols-4">
         @foreach ($items as $item)
             @if ($item['live'])
+                @php
+                    $isActive = request()->routeIs($item['route']) || request()->routeIs(...($item['extraRoutes'] ?? []));
+                @endphp
                 <a href="{{ route($item['route']) }}" wire:navigate
                     class="flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-medium
-                        {{ request()->routeIs($item['route']) ? 'text-trenakt-primary' : 'text-gray-400 dark:text-gray-500' }}">
+                        {{ $isActive ? 'text-trenakt-primary' : 'text-gray-400 dark:text-gray-500' }}">
                     <x-icon name="{{ $item['icon'] }}" class="w-5 h-5" />
                     {{ $item['label'] }}
                 </a>

@@ -1,13 +1,11 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
-use App\Services\ExchangeRateService;
 use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Checked daily; the command itself checks the admin-configured payout day
+// (or the "always open" setting) and no-ops on any other day.
+Schedule::command('withdrawals:process')->dailyAt('02:00');
 
-Schedule::call(fn () => app(ExchangeRateService::class)->refresh())
-    ->everySixHours();
+// Keeps the NGN-based conversion rates behind every participant-facing
+// currency display (see CurrencyService) from going stale.
+Schedule::command('exchange-rates:refresh')->dailyAt('01:00');

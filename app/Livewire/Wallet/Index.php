@@ -8,6 +8,7 @@ use App\Services\Payments\FlutterwaveService;
 use App\Services\Payments\PaystackService;
 use App\Services\Payments\WalletFundingService;
 use App\Services\WalletService;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Index extends Component
@@ -43,6 +44,14 @@ class Index extends Component
                 ? $paystack->initialize(auth()->user()->email, $this->amount, $callbackUrl, $fundingRequest->reference)
                 : $flutterwave->initialize(auth()->user()->email, $this->amount, $callbackUrl, $fundingRequest->reference);
         } catch (\Throwable $e) {
+            Log::error('Wallet funding gateway initialization failed', [
+                'gateway' => $this->gateway,
+                'user_id' => auth()->id(),
+                'message' => $e->getMessage(),
+                'response_body' => method_exists($e, 'getResponse') && $e->getResponse()
+                    ? (string) $e->getResponse()->getBody()
+                    : null,
+            ]);
             $this->dispatch('toast', type: 'error', message: 'Could not connect to the payment gateway. Please try again.');
             return;
         }

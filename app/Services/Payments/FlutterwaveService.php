@@ -22,7 +22,7 @@ class FlutterwaveService
 
     public function initialize(string $email, float $amountNaira, string $callbackUrl, string $reference): array
     {
-        $response = $this->client->post('/payments', [
+        $response = $this->client->post('payments', [
             'json' => [
                 'tx_ref' => $reference,
                 'amount' => $amountNaira,
@@ -42,7 +42,7 @@ class FlutterwaveService
 
     public function verify(string $reference, string $transactionId): array
     {
-        $response = $this->client->get("/transactions/{$transactionId}/verify");
+        $response = $this->client->get("transactions/{$transactionId}/verify");
         $data = json_decode($response->getBody()->getContents(), true);
 
         $status = $data['data']['status'] ?? null;

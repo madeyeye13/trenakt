@@ -36,14 +36,22 @@ class Index extends Component
             ->latest()
             ->paginate(8);
 
+        $counts = (clone $baseQuery)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'pending_review' THEN 1 ELSE 0 END) as pending_review,
+            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
+            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
+        ")->first();
+
         return view('livewire.campaigns.index', [
             'campaigns' => $campaigns,
             'counts' => [
-                'all' => (clone $baseQuery)->count(),
-                'pending_review' => (clone $baseQuery)->where('status', 'pending_review')->count(),
-                'approved' => (clone $baseQuery)->where('status', 'approved')->count(),
-                'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
-                'completed' => (clone $baseQuery)->where('status', 'completed')->count(),
+                'all' => (int) $counts->total,
+                'pending_review' => (int) $counts->pending_review,
+                'approved' => (int) $counts->approved,
+                'rejected' => (int) $counts->rejected,
+                'completed' => (int) $counts->completed,
             ],
         ])->layout('components.layouts.app', ['title' => 'Campaigns']);
     }

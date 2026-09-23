@@ -3,16 +3,16 @@
 
     $earningItems = [
         ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'grid', 'live' => true],
-        ['label' => 'Available Tasks', 'route' => null, 'icon' => 'briefcase', 'live' => false],
-        ['label' => 'Wallet', 'route' => null, 'icon' => 'wallet', 'live' => false],
-        ['label' => 'Profile', 'route' => null, 'icon' => 'user', 'live' => false],
+        ['label' => 'Available Tasks', 'route' => 'tasks.discover', 'icon' => 'briefcase', 'live' => true, 'extraRoutes' => ['tasks.index']],
+        ['label' => 'Earnings', 'route' => 'earnings.index', 'icon' => 'wallet', 'live' => true],
+        ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'live' => true],
     ];
 
     $promotingItems = [
         ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'grid', 'live' => true],
         ['label' => 'Campaigns', 'route' => 'campaigns.index', 'icon' => 'briefcase', 'live' => true],
         ['label' => 'Wallet', 'route' => 'wallet.index', 'icon' => 'wallet', 'live' => true],
-        ['label' => 'Profile', 'route' => null, 'icon' => 'user', 'live' => false],
+        ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'live' => true],
     ];
 
     $items = $mode === 'business' ? $promotingItems : $earningItems;
@@ -29,9 +29,12 @@
         <nav class="space-y-1">
             @foreach ($items as $item)
                 @if ($item['live'])
+                    @php
+                        $isActive = request()->routeIs($item['route']) || request()->routeIs(...($item['extraRoutes'] ?? []));
+                    @endphp
                     <a href="{{ route($item['route']) }}" wire:navigate
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
-                            {{ request()->routeIs($item['route']) ? 'bg-trenakt-primary/10 text-trenakt-primary dark:bg-trenakt-primary/20' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                            {{ $isActive ? 'bg-trenakt-primary/10 text-trenakt-primary dark:bg-trenakt-primary/20' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5' }}">
                         <x-icon name="{{ $item['icon'] }}" class="w-4.5 h-4.5" />
                         {{ $item['label'] }}
                     </a>
@@ -57,12 +60,24 @@
                 <p class="text-sm font-medium text-trenakt-dark dark:text-white truncate">{{ auth()->user()->name }}</p>
                 <p class="text-xs text-gray-400 dark:text-gray-500">{{ $mode === 'business' ? 'Promoting' : 'Earning' }}</p>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="text-gray-400 hover:text-trenakt-dark dark:hover:text-white transition" title="Log out">
-                    <x-icon name="logout" class="w-4.5 h-4.5" />
-                </button>
-            </form>
+            <button type="button" @click="$dispatch('open-modal', { name: 'confirm-logout' })"
+                class="text-gray-400 hover:text-trenakt-dark dark:hover:text-white transition" title="Log out">
+                <x-icon name="logout" class="w-4.5 h-4.5" />
+            </button>
         </div>
     </div>
 </aside>
+
+<x-modal name="confirm-logout" maxWidth="sm">
+    <h3 class="text-lg font-semibold mb-2">Log out?</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You'll need to sign back in to access your account.</p>
+    <div class="flex justify-end gap-3">
+        <button type="button" @click="$dispatch('close-modal')" class="text-sm font-medium text-gray-500">Cancel</button>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="bg-trenakt-danger text-white text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition">
+                Yes, log out
+            </button>
+        </form>
+    </div>
+</x-modal>

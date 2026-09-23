@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Page not found — Trenakt</title>
+    <title>Page not found &middot; Trenakt</title>
     <script>
         (function () {
             var theme = localStorage.getItem('trenakt-theme') || 'light';

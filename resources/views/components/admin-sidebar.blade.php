@@ -1,3 +1,10 @@
+@php
+    $pendingCampaignsCount = \App\Models\Campaign::where('status', 'pending_review')->count();
+    $pendingSubmissionsCount = \App\Models\CampaignSubmission::where('status', 'submitted')->count();
+    $pendingWithdrawalsCount = \App\Models\WithdrawalRequest::where('status', 'pending')->count();
+    $pendingActivationPaymentsCount = \App\Models\ActivationPayment::where('status', 'pending')->count();
+@endphp
+
 <aside
     x-cloak
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
@@ -29,6 +36,18 @@
                 Dashboard
             </a>
 
+            <a href="{{ route('admin.campaigns.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                    {{ request()->routeIs('admin.campaigns.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                <span class="flex items-center gap-3">
+                    <x-icon name="briefcase" class="w-4.5 h-4.5" />
+                    Campaigns
+                </span>
+                @if ($pendingCampaignsCount > 0)
+                    <span class="text-[10px] font-semibold bg-trenakt-accent text-white rounded-full px-2 py-0.5">{{ $pendingCampaignsCount }}</span>
+                @endif
+            </a>
+
             <a href="{{ route('admin.categories.index') }}" wire:navigate @click="sidebarOpen = false"
                 class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
                     {{ request()->routeIs('admin.categories.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
@@ -36,13 +55,64 @@
                 Categories
             </a>
 
-            <span class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 dark:text-white/25 cursor-not-allowed">
+            <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mt-5 mb-2">Earning</p>
+
+            <a href="{{ route('admin.submissions.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                    {{ request()->routeIs('admin.submissions.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
                 <span class="flex items-center gap-3">
-                    <x-icon name="wallet" class="w-4.5 h-4.5" />
-                    Settings
+                    <x-icon name="check-circle" class="w-4.5 h-4.5" />
+                    Submissions
                 </span>
-                <span class="text-[10px] uppercase tracking-wide bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white/30 rounded-full px-2 py-0.5">Soon</span>
-            </span>
+                @if ($pendingSubmissionsCount > 0)
+                    <span class="text-[10px] font-semibold bg-trenakt-accent text-white rounded-full px-2 py-0.5">{{ $pendingSubmissionsCount }}</span>
+                @endif
+            </a>
+
+            <a href="{{ route('admin.rejection-reasons.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                    {{ request()->routeIs('admin.rejection-reasons.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                <x-icon name="x-circle" class="w-4.5 h-4.5" />
+                Rejection reasons
+            </a>
+
+            <a href="{{ route('admin.withdrawals.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                    {{ request()->routeIs('admin.withdrawals.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                <span class="flex items-center gap-3">
+                    <x-icon name="bank" class="w-4.5 h-4.5" />
+                    Withdrawals
+                </span>
+                @if ($pendingWithdrawalsCount > 0)
+                    <span class="text-[10px] font-semibold bg-trenakt-accent text-white rounded-full px-2 py-0.5">{{ $pendingWithdrawalsCount }}</span>
+                @endif
+            </a>
+
+            <a href="{{ route('admin.activation-payments.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                    {{ request()->routeIs('admin.activation-payments.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                <span class="flex items-center gap-3">
+                    <x-icon name="shield" class="w-4.5 h-4.5" />
+                    Activation payments
+                </span>
+                @if ($pendingActivationPaymentsCount > 0)
+                    <span class="text-[10px] font-semibold bg-trenakt-accent text-white rounded-full px-2 py-0.5">{{ $pendingActivationPaymentsCount }}</span>
+                @endif
+            </a>
+
+            <a href="{{ route('admin.countries.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition mt-5
+                    {{ request()->routeIs('admin.countries.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                <x-icon name="switch" class="w-4.5 h-4.5" />
+                Countries
+            </a>
+
+            <a href="{{ route('admin.settings.index') }}" wire:navigate @click="sidebarOpen = false"
+                class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                    {{ request()->routeIs('admin.settings.*') ? 'bg-trenakt-accent/15 text-trenakt-accent' : 'text-gray-500 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5' }}">
+                <x-icon name="grid" class="w-4.5 h-4.5" />
+                Settings
+            </a>
         </nav>
     </div>
 
@@ -55,12 +125,24 @@
                 <p class="text-sm font-medium text-trenakt-dark dark:text-white truncate">{{ auth()->user()->name }}</p>
                 <p class="text-xs text-gray-400 dark:text-white/40">{{ auth()->user()->hasRole('super_admin') ? 'Super admin' : 'Admin' }}</p>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="text-gray-400 dark:text-white/40 hover:text-trenakt-dark dark:hover:text-white transition" title="Log out">
-                    <x-icon name="logout" class="w-4.5 h-4.5" />
-                </button>
-            </form>
+            <button type="button" @click="$dispatch('open-modal', { name: 'confirm-logout' })"
+                class="text-gray-400 dark:text-white/40 hover:text-trenakt-dark dark:hover:text-white transition" title="Log out">
+                <x-icon name="logout" class="w-4.5 h-4.5" />
+            </button>
         </div>
     </div>
 </aside>
+
+<x-modal name="confirm-logout" maxWidth="sm">
+    <h3 class="text-lg font-semibold mb-2">Log out?</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You'll need to sign back in to get back to the admin console.</p>
+    <div class="flex justify-end gap-3">
+        <button type="button" @click="$dispatch('close-modal')" class="text-sm font-medium text-gray-500">Cancel</button>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="bg-trenakt-danger text-white text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition">
+                Yes, log out
+            </button>
+        </form>
+    </div>
+</x-modal>

@@ -24,6 +24,7 @@ class Create extends Component
     public ?int $campaign_category_id = null;
     public string $title = '';
     public string $description = '';
+    public array $steps = [];
     public float $rate_per_participant = 0;
     public int $target_participants = 0;
     public array $businessAnswers = [];
@@ -86,6 +87,17 @@ class Create extends Component
         $this->customFields = array_values($this->customFields);
     }
 
+    public function addStep(): void
+    {
+        $this->steps[] = '';
+    }
+
+    public function removeStep(int $index): void
+    {
+        unset($this->steps[$index]);
+        $this->steps = array_values($this->steps);
+    }
+
     public function toggleCountry(int $countryId): void
     {
         if (in_array($countryId, $this->country_ids)) {
@@ -133,6 +145,7 @@ class Create extends Component
                 'campaign_category_id' => $this->campaign_category_id,
                 'title' => $this->title,
                 'description' => $this->description,
+                'steps' => $this->steps,
                 'rate_per_participant' => $this->rate_per_participant,
                 'target_participants' => $this->target_participants,
                 'customFields' => $this->customFields,
@@ -158,6 +171,7 @@ class Create extends Component
             'gender' => ['required', 'in:any,male,female'],
             'customFields.*.label' => ['nullable', 'string', 'max:255'],
             'customFields.*.type' => ['nullable', 'in:text,textarea,file,url,number'],
+            'steps.*' => ['nullable', 'string', 'max:500'],
         ]);
 
         $category = CampaignCategory::with('requirementFields')->find($this->campaign_category_id);
@@ -204,12 +218,19 @@ class Create extends Component
 
         try {
             DB::transaction(function () use ($category, $budget, $campaignService) {
+                $steps = collect($this->steps)
+                    ->map(fn ($step) => trim((string) $step))
+                    ->filter()
+                    ->values()
+                    ->all();
+
                 $campaign = new Campaign();
                 $campaign->forceFill([
                     'user_id' => auth()->id(),
                     'campaign_category_id' => $category->id,
                     'title' => $this->title,
                     'description' => $this->description,
+                    'steps' => $steps ?: null,
                     'rate_per_participant' => $this->rate_per_participant,
                     'target_participants' => $this->target_participants,
                     'total_budget' => $budget['total'],

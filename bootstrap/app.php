@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'business' => \App\Http\Middleware\EnsureBusinessMode::class,
+            'participant' => \App\Http\Middleware\EnsureParticipantMode::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {

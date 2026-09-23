@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Campaign;
+use App\Notifications\Concerns\Broadcastable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -10,7 +11,7 @@ use Illuminate\Notifications\Notification;
 
 class CampaignPendingReview extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Broadcastable, Queueable;
 
     public int $tries = 3;
     public int $backoff = 30;
@@ -21,7 +22,7 @@ class CampaignPendingReview extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return $this->broadcastWhenAvailable(['mail', 'database']);
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -31,7 +32,7 @@ class CampaignPendingReview extends Notification implements ShouldQueue
             ->greeting('Hi ' . $notifiable->name . ',')
             ->line('"' . $this->campaign->title . '" was just submitted by ' . $this->campaign->business->name . ' and needs review.')
             ->line('Budget: ₦' . number_format($this->campaign->total_budget, 2))
-            ->action('Review campaign', route('admin.dashboard'));
+            ->action('Review campaign', route('admin.campaigns.show', $this->campaign));
     }
 
     public function toArray(object $notifiable): array

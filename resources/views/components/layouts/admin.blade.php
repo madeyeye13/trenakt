@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Admin' }} — Trenakt</title>
+    <title>{{ $title ?? 'Admin' }} &middot; Trenakt</title>
     <meta name="robots" content="noindex, nofollow">
     <script>
         (function () {
@@ -36,6 +36,8 @@
                     </div>
 
                     <div class="flex items-center gap-4">
+                        @livewire('notification-bell')
+
                         <x-admin-theme-toggle />
 
                         <div class="w-9 h-9 rounded-full bg-trenakt-accent text-white flex items-center justify-center text-sm font-semibold">

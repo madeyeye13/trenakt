@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
 use App\Models\WalletFundingRequest;
+use App\Services\Payments\ActivationFeeService;
 use App\Services\Payments\WalletFundingService;
 use Illuminate\Http\Request;
 
 class PaystackWebhookController extends Controller
 {
-    public function handle(Request $request, WalletFundingService $fundingService)
+    public function handle(Request $request, WalletFundingService $fundingService, ActivationFeeService $activationFee)
     {
         $signature = $request->header('X-Paystack-Signature');
         $expected = hash_hmac('sha512', $request->getContent(), (string) config('payments.paystack.secret_key'));
@@ -20,11 +21,20 @@ class PaystackWebhookController extends Controller
 
         if ($request->input('event') === 'charge.success') {
             $reference = $request->input('data.reference');
-            $fundingRequest = $reference ? WalletFundingRequest::where('reference', $reference)->first() : null;
+            $amount = ($request->input('data.amount') ?? 0) / 100;
 
-            if ($fundingRequest) {
-                $amount = ($request->input('data.amount') ?? 0) / 100;
-                $fundingService->complete($fundingRequest, true, $amount);
+            // Activation-fee references are always 'act_...' (see
+            // ActivationFeeService::initialize()), which keeps them from
+            // ever being confused with a 'trk_...' wallet-funding reference
+            // - no need to query both tables to figure out which this is.
+            if ($reference && str_starts_with($reference, 'act_')) {
+                $activationFee->complete($reference, true, $amount);
+            } elseif ($reference) {
+                $fundingRequest = WalletFundingRequest::where('reference', $reference)->first();
+
+                if ($fundingRequest) {
+                    $fundingService->complete($fundingRequest, true, $amount);
+                }
             }
         }
 

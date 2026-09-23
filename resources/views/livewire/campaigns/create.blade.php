@@ -86,6 +86,32 @@
                         class="w-full mt-1.5 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary"></textarea>
                     @error('description') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
                 </div>
+
+                <div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium">Steps to complete this task (optional)</label>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Spell out exactly what a participant should do, in order, e.g. "Click the link above", "Sign up with your real email", "Take a screenshot of the confirmation page". We show these to participants as a numbered list instead of your description alone.</p>
+                        </div>
+                        <button type="button" wire:click="addStep" class="text-xs font-medium text-trenakt-primary shrink-0">+ Add step</button>
+                    </div>
+
+                    @if (count($steps) > 0)
+                        <div class="space-y-2 mt-3">
+                            @foreach ($steps as $index => $step)
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-semibold text-gray-400 dark:text-white/40 w-5 shrink-0">{{ $index + 1 }}.</span>
+                                    <input wire:model="steps.{{ $index }}" type="text" placeholder="e.g. Click the link above and sign up"
+                                        class="w-full border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary">
+                                    <button type="button" wire:click="removeStep({{ $index }})" class="text-gray-300 hover:text-trenakt-danger transition shrink-0">
+                                        <x-icon name="x" class="w-4 h-4" />
+                                    </button>
+                                </div>
+                                @error('steps.' . $index) <p class="text-xs text-trenakt-danger ml-7">{{ $message }}</p> @enderror
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5">

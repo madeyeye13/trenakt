@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Campaign;
+use App\Notifications\Concerns\Broadcastable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -10,7 +11,7 @@ use Illuminate\Notifications\Notification;
 
 class CampaignRejected extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Broadcastable, Queueable;
 
     public int $tries = 3;
     public int $backoff = 30;
@@ -21,7 +22,7 @@ class CampaignRejected extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return $this->broadcastWhenAvailable(['mail', 'database']);
     }
 
     public function toMail(object $notifiable): MailMessage

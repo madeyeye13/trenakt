@@ -98,6 +98,15 @@
         </div>
         @error('country_id') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
 
+        @if ($referralSystemEnabled)
+            <div x-show="intent === 'participant'" x-cloak class="mt-4">
+                <label class="text-sm font-medium text-gray-700">Referral code (optional)</label>
+                <input wire:model="referralCode" type="text" placeholder="e.g. AB12CD34"
+                    class="w-full mt-1 border border-gray-300 rounded-md px-3 py-2.5 uppercase focus:outline-none focus:border-trenakt-primary">
+                <p class="text-xs text-gray-400 mt-1">Were you referred by someone? Enter their code to help them earn a reward.</p>
+            </div>
+        @endif
+
         <label class="flex items-start gap-2 mt-6 cursor-pointer select-none" x-data="{ agreed: false }">
             <span class="relative inline-flex items-center justify-center w-4.5 h-4.5 rounded border mt-0.5 shrink-0 transition"
                 @click="agreed = !agreed; $wire.agreed_terms = agreed"

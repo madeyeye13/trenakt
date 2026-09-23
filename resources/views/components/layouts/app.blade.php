@@ -26,7 +26,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="font-sans bg-trenakt-bg text-trenakt-dark dark:bg-trenakt-dark dark:text-white antialiased min-h-screen">
+<body class="font-sans bg-trenakt-bg text-trenakt-dark dark:bg-trenakt-dark dark:text-white antialiased min-h-screen overflow-x-hidden">
     <div class="flex">
         <x-sidebar-nav class="hidden lg:flex w-64 shrink-0" />
 
@@ -45,9 +45,13 @@
                     <div class="flex items-center gap-4">
                         @livewire('mode-switcher')
 
-                        <x-theme-toggle />
+                        @livewire('notification-bell')
 
-                        <div class="w-9 h-9 rounded-full bg-trenakt-primary text-white flex items-center justify-center text-sm font-semibold">
+                        <div class="hidden lg:block">
+                            <x-theme-toggle />
+                        </div>
+
+                        <div class="hidden lg:flex w-9 h-9 rounded-full bg-trenakt-primary text-white items-center justify-center text-sm font-semibold">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
                     </div>
