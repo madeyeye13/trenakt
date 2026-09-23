@@ -80,7 +80,7 @@
                 </button>
             </div>
 
-            <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-1 mb-5">
+            <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-1 mb-5 scrollbar-brand">
                 @foreach ($participantFields as $field)
                     <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
                         <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $field->label }}</p>

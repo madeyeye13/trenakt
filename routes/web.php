@@ -5,6 +5,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
     return view('marketing.home');
 });
 
@@ -44,6 +48,8 @@ Route::middleware(['auth', 'business'])->group(function () {
     Route::get('/wallet/callback/{gateway}', [\App\Http\Controllers\WalletCallbackController::class, 'handle'])->name('wallet.callback');
     Route::get('/campaigns/create', \App\Livewire\Campaigns\Create::class)->name('campaigns.create');
     Route::get('/campaigns/{campaign}/submissions', \App\Livewire\Campaigns\Submissions::class)->name('campaigns.submissions');
+    Route::get('/campaigns/{campaign}/performance', \App\Livewire\Campaigns\Performance::class)->name('campaigns.performance');
+    Route::get('/reports', \App\Livewire\Reports\Index::class)->name('reports.index');
 });
 
 Route::middleware(['auth', 'participant'])->group(function () {

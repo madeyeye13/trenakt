@@ -48,11 +48,11 @@
         </div>
         <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
             <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Total campaign spend</p>
-            <p class="text-xl font-bold text-trenakt-accent">₦{{ number_format($totalSpent, 2) }}</p>
+            <p class="text-lg sm:text-xl font-bold text-trenakt-accent">₦{{ number_format($totalSpent, 2) }}</p>
         </div>
         <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
             <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Total rewards paid</p>
-            <p class="text-xl font-bold text-trenakt-accent">₦{{ number_format($totalRewardsPaid, 2) }}</p>
+            <p class="text-lg sm:text-xl font-bold text-trenakt-accent">₦{{ number_format($totalRewardsPaid, 2) }}</p>
         </div>
     </div>
 

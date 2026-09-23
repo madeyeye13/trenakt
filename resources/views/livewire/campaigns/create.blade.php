@@ -254,7 +254,7 @@
         <div wire:loading.remove wire:target="campaign_category_id" class="hidden lg:block lg:w-1/3 space-y-6 sticky top-24">
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-4">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30">Wallet balance</p>
-                <p class="text-2xl font-bold {{ $insufficientBalance ? 'text-trenakt-danger' : 'text-trenakt-primary' }}">₦{{ number_format($balance, 2) }}</p>
+                <p class="text-xl sm:text-2xl font-bold {{ $insufficientBalance ? 'text-trenakt-danger' : 'text-trenakt-primary' }}">₦{{ number_format($balance, 2) }}</p>
             </div>
 
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-4">

@@ -9,11 +9,11 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                     <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Available</p>
-                    <p class="text-2xl font-bold text-trenakt-primary"><x-currency :amount="$balance" /></p>
+                    <p class="text-xl sm:text-2xl font-bold text-trenakt-primary"><x-currency :amount="$balance" /></p>
                 </div>
                 <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                     <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Held for campaigns</p>
-                    <p class="text-2xl font-bold text-trenakt-dark dark:text-white"><x-currency :amount="$reserved" /></p>
+                    <p class="text-xl sm:text-2xl font-bold text-trenakt-dark dark:text-white"><x-currency :amount="$reserved" /></p>
                 </div>
             </div>
 

@@ -18,7 +18,7 @@
     x-on:keydown.escape.window="show = false"
     x-show="show"
     x-cloak
-    class="fixed inset-0 z-50 overflow-y-auto">
+    class="fixed inset-0 z-50 overflow-y-auto scrollbar-brand">
     <div class="fixed inset-0 bg-black/40" @click="show = false"></div>
 
     <div class="flex min-h-screen items-center justify-center p-4">

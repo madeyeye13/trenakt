@@ -10,7 +10,7 @@
     </button>
 
     <div x-show="open" x-cloak x-transition @click.outside="open = false"
-        class="absolute z-20 mt-1 w-full bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-md shadow-lg py-1 max-h-56 overflow-y-auto">
+        class="absolute z-20 mt-1 w-full bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-md shadow-lg py-1 max-h-56 overflow-y-auto scrollbar-brand">
         @foreach ($options as $key => $label)
             <button type="button" @click="value = '{{ $key }}'; $wire.set('{{ $model }}', '{{ $key }}'); open = false"
                 class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/5"

@@ -5,7 +5,12 @@
             <h1 class="text-2xl font-bold mt-1">{{ $campaign->title }}</h1>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Participant submissions</p>
         </div>
-        <span class="text-xs text-gray-400 dark:text-white/40">{{ $submissions->total() }} total</span>
+        <div class="flex items-center gap-4">
+            <a href="{{ route('campaigns.performance', $campaign) }}" wire:navigate class="text-xs font-medium text-trenakt-primary hover:underline">
+                View performance
+            </a>
+            <span class="text-xs text-gray-400 dark:text-white/40">{{ $submissions->total() }} total</span>
+        </div>
     </div>
 
     <div wire:loading.remove wire:target="page" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
@@ -19,7 +24,7 @@
         </div>
         <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-4 col-span-2 sm:col-span-1">
             <p class="text-xs text-gray-400 dark:text-white/40">Rate per participant</p>
-            <p class="text-xl font-bold mt-1">₦{{ number_format($campaign->rate_per_participant, 2) }}</p>
+            <p class="text-lg sm:text-xl font-bold mt-1">₦{{ number_format($campaign->rate_per_participant, 2) }}</p>
         </div>
     </div>
 
@@ -98,7 +103,7 @@
                 </button>
             </div>
 
-            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-brand">
                 @foreach ($participantFields as $field)
                     <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
                         <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $field->label }}</p>

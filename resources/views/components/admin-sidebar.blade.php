@@ -25,7 +25,7 @@
         </button>
     </div>
 
-    <div class="px-3 py-4 flex-1 overflow-y-auto">
+    <div class="px-3 py-4 flex-1 overflow-y-auto scrollbar-brand">
         <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-2">Menu</p>
 
         <nav class="space-y-1">

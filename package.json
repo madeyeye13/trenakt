@@ -6,6 +6,9 @@
         "build": "vite build",
         "dev": "vite"
     },
+    "dependencies": {
+        "chart.js": "^4.4.0"
+    },
     "devDependencies": {
         "@tailwindcss/vite": "^4.3.3",
         "concurrently": "^10.0.3",

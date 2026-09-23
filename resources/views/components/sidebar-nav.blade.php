@@ -10,7 +10,8 @@
 
     $promotingItems = [
         ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'grid', 'live' => true],
-        ['label' => 'Campaigns', 'route' => 'campaigns.index', 'icon' => 'briefcase', 'live' => true],
+        ['label' => 'Campaigns', 'route' => 'campaigns.index', 'icon' => 'briefcase', 'live' => true, 'extraRoutes' => ['campaigns.submissions', 'campaigns.performance']],
+        ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'chart-bar', 'live' => true],
         ['label' => 'Wallet', 'route' => 'wallet.index', 'icon' => 'wallet', 'live' => true],
         ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user', 'live' => true],
     ];
@@ -23,7 +24,7 @@
         <x-trenakt-logo />
     </div>
 
-    <div class="px-3 flex-1 overflow-y-auto">
+    <div class="px-3 flex-1 overflow-y-auto scrollbar-brand">
         <p class="px-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Menu</p>
 
         <nav class="space-y-1">

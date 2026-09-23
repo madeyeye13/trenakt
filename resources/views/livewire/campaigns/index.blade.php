@@ -91,9 +91,14 @@
 
                         <div class="mt-auto flex items-center justify-between gap-3 pt-1">
                             <span class="text-xs text-gray-400 dark:text-white/40">{{ $campaign->created_at->format('M j, Y') }}</span>
-                            <a href="{{ route('campaigns.submissions', $campaign) }}" wire:navigate class="text-xs font-medium text-trenakt-primary hover:underline">
-                                View submissions
-                            </a>
+                            <div class="flex items-center gap-3">
+                                <a href="{{ route('campaigns.performance', $campaign) }}" wire:navigate class="text-xs font-medium text-trenakt-primary hover:underline">
+                                    Performance
+                                </a>
+                                <a href="{{ route('campaigns.submissions', $campaign) }}" wire:navigate class="text-xs font-medium text-trenakt-primary hover:underline">
+                                    Submissions
+                                </a>
+                            </div>
                         </div>
                     </article>
                 @endforeach

@@ -5,7 +5,10 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-1">Promoting overview</p>
                 <h1 class="text-2xl font-bold">Dashboard</h1>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="{{ route('reports.index') }}" wire:navigate class="inline-flex items-center justify-center border border-gray-200 dark:border-white/10 text-sm font-medium rounded-md px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition">
+                    Reports
+                </a>
                 <a href="{{ route('wallet.index') }}" wire:navigate class="inline-flex items-center justify-center border border-gray-200 dark:border-white/10 text-sm font-medium rounded-md px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition">
                     Fund wallet
                 </a>
@@ -18,7 +21,7 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                 <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Wallet balance</p>
-                <p class="text-xl font-bold text-trenakt-primary">₦{{ number_format($availableBalance, 2) }}</p>
+                <p class="text-lg sm:text-xl font-bold text-trenakt-primary">₦{{ number_format($availableBalance, 2) }}</p>
             </div>
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                 <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Live campaigns</p>
@@ -30,8 +33,20 @@
             </div>
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                 <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Total spent</p>
-                <p class="text-xl font-bold">₦{{ number_format($totalSpent, 2) }}</p>
+                <p class="text-lg sm:text-xl font-bold">₦{{ number_format($totalSpent, 2) }}</p>
             </div>
+        </div>
+
+        <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-sm font-semibold">Spend, last 6 months</p>
+                <a href="{{ route('reports.index') }}" wire:navigate class="text-xs font-medium text-trenakt-primary hover:underline">Full report</a>
+            </div>
+            <x-chart type="line" wire:key="dashboard-spend"
+                :labels="$spendOverTime['labels']"
+                :datasets="[['label' => 'Spend', 'data' => $spendOverTime['data']]]"
+                :currency="true"
+                :height="140" />
         </div>
 
         <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
@@ -78,7 +93,7 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-1">Earning overview</p>
                 <h1 class="text-2xl font-bold">Dashboard</h1>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
                 <a href="{{ route('earnings.index') }}" wire:navigate class="inline-flex items-center justify-center border border-gray-200 dark:border-white/10 text-sm font-medium rounded-md px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition">
                     View earnings
                 </a>
@@ -103,7 +118,7 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                 <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Available balance</p>
-                <p class="text-xl font-bold text-trenakt-primary"><x-currency :amount="$availableBalance" /></p>
+                <p class="text-lg sm:text-xl font-bold text-trenakt-primary"><x-currency :amount="$availableBalance" /></p>
             </div>
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                 <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Available tasks</p>

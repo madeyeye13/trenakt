@@ -62,4 +62,9 @@ class Campaign extends Model
     {
         return $this->hasOne(CampaignTargeting::class);
     }
+
+    public function impressions(): HasMany
+    {
+        return $this->hasMany(CampaignImpression::class);
+    }
 }

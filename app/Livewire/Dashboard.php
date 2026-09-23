@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Campaign;
 use App\Models\CampaignSubmission;
 use App\Models\WalletTransaction;
+use App\Services\CampaignAnalyticsService;
 use App\Services\ParticipantWalletService;
 use App\Services\Payments\WithdrawalService;
 use App\Services\TaskService;
@@ -26,15 +27,16 @@ class Dashboard extends Component
         ParticipantWalletService $participantWallet,
         TaskService $tasks,
         WithdrawalService $withdrawals,
+        CampaignAnalyticsService $analytics,
     ) {
         $user = auth()->user();
 
         return $user->activeMode() === 'business'
-            ? $this->renderBusiness($user, $businessWallet)
+            ? $this->renderBusiness($user, $businessWallet, $analytics)
             : $this->renderParticipant($user, $participantWallet, $tasks, $withdrawals);
     }
 
-    protected function renderBusiness($user, WalletService $wallet)
+    protected function renderBusiness($user, WalletService $wallet, CampaignAnalyticsService $analytics)
     {
         $baseQuery = Campaign::where('user_id', $user->id);
 
@@ -60,6 +62,7 @@ class Dashboard extends Component
                 'completed' => (int) $counts->completed,
             ],
             'totalSpent' => (float) $totalSpent,
+            'spendOverTime' => $analytics->spendOverTime($user),
             'recentCampaigns' => (clone $baseQuery)->with('category')->withCount('submissions')->latest()->limit(5)->get(),
         ])->layout('components.layouts.app', ['title' => 'Dashboard']);
     }

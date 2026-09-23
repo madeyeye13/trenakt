@@ -26,14 +26,14 @@
             <div class="grid sm:grid-cols-2 gap-4 min-w-0">
                 <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5 min-w-0">
                     <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Available balance</p>
-                    <p class="text-2xl font-bold text-trenakt-primary"><x-currency :amount="$availableBalance" /></p>
+                    <p class="text-xl sm:text-2xl font-bold text-trenakt-primary"><x-currency :amount="$availableBalance" /></p>
                     @if ($referralEarnings > 0)
                         <p class="text-xs text-gray-400 dark:text-white/40 mt-1">includes <x-currency :amount="$referralEarnings" /> from referrals</p>
                     @endif
                 </div>
                 <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5 min-w-0">
                     <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Pending withdrawal</p>
-                    <p class="text-2xl font-bold"><x-currency :amount="$reservedBalance" /></p>
+                    <p class="text-xl sm:text-2xl font-bold"><x-currency :amount="$reservedBalance" /></p>
                 </div>
             </div>
 

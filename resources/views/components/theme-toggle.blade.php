@@ -4,6 +4,7 @@
             this.theme = this.theme === 'dark' ? 'light' : 'dark';
             localStorage.setItem('trenakt-theme', this.theme);
             document.documentElement.setAttribute('data-theme', this.theme);
+            window.dispatchEvent(new CustomEvent('trenakt-theme-changed', { detail: this.theme }));
         }
     }">
     <button type="button" @click="toggle()" class="text-gray-400 hover:text-trenakt-dark dark:hover:text-white transition" title="Toggle theme">

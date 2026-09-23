@@ -4,9 +4,12 @@ namespace App\Livewire\Tasks;
 
 use App\Models\Campaign;
 use App\Models\CampaignCategory;
+use App\Models\CampaignImpression;
+use App\Models\User;
 use App\Services\Payments\ActivationFeeService;
 use App\Services\TaskService;
 use App\Services\Verification\SubmissionVerifier;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -29,6 +32,22 @@ class Discover extends Component
         $this->started = false;
         $this->answers = [];
         $this->resetValidation();
+
+        // Reach counts a participant the moment a campaign is listed to
+        // them (see logImpressions() in render()); detail_opened_at is the
+        // stronger signal that they actually looked at it. firstOrCreate is
+        // just defense in depth in case this is somehow reached without an
+        // impression row already existing. Only set once, a reopen doesn't
+        // move it.
+        $impression = CampaignImpression::firstOrCreate(
+            ['campaign_id' => $campaignId, 'participant_id' => auth()->id()],
+            ['first_seen_at' => now()],
+        );
+
+        if (! $impression->detail_opened_at) {
+            $impression->update(['detail_opened_at' => now()]);
+        }
+
         $this->dispatch('open-modal', name: 'task-details');
     }
 
@@ -131,6 +150,32 @@ class Discover extends Component
         return $rule;
     }
 
+    /**
+     * Reach: log that $participant saw each of $campaigns on Discover.
+     * insertOrIgnore leans on the unique(campaign_id, participant_id)
+     * index to silently skip rows that already exist, so first_seen_at is
+     * only ever set once per participant per campaign no matter how many
+     * times this page re-renders (search, category filter, pagination).
+     */
+    protected function logImpressions(Collection $campaigns, User $participant): void
+    {
+        if ($campaigns->isEmpty()) {
+            return;
+        }
+
+        $now = now();
+
+        $rows = $campaigns->map(fn (Campaign $campaign) => [
+            'campaign_id' => $campaign->id,
+            'participant_id' => $participant->id,
+            'first_seen_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->all();
+
+        CampaignImpression::insertOrIgnore($rows);
+    }
+
     public function render(TaskService $tasks, ActivationFeeService $activationFee)
     {
         $participant = auth()->user();
@@ -145,6 +190,8 @@ class Discover extends Component
             ->get()
             ->filter(fn (Campaign $campaign) => $tasks->matchesTargeting($campaign->targeting, $participant))
             ->values();
+
+        $this->logImpressions($candidates, $participant);
 
         $selectedCampaign = $this->selectedCampaignId
             ? Campaign::with(['category.requirementFields', 'customFields', 'requirementAnswers.field'])->find($this->selectedCampaignId)

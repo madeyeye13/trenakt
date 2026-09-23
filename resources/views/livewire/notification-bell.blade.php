@@ -30,7 +30,7 @@
             @endif
         </div>
 
-        <div class="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-white/10">
+        <div class="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-white/10 scrollbar-brand">
             @forelse ($notifications as $notification)
                 @php
                     $isUnread = is_null($notification->read_at);
