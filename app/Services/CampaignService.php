@@ -61,7 +61,10 @@ class CampaignService
 
         $business->notify(new \App\Notifications\CampaignSubmitted($campaign));
 
-        $reviewers = User::role(['admin', 'super_admin'])->get();
+        // Permission-driven for the same reason as TaskService::submit():
+        // whichever roles a super admin has given manage-campaigns to are
+        // the ones that hear about it, not a fixed role-name list.
+        $reviewers = User::permission('manage-campaigns')->get();
 
         if ($reviewers->isNotEmpty()) {
             \Illuminate\Support\Facades\Notification::send($reviewers, new \App\Notifications\CampaignPendingReview($campaign));

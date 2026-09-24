@@ -64,6 +64,38 @@ class ParticipantWalletService
     }
 
     /**
+     * Called by TaskService::revokeReward() to claw back an already-paid
+     * reward. Records a negative manual_admin_adjustment rather than
+     * deleting or reversing the original credit, so the full history (what
+     * was earned, and separately what was taken back and why) stays intact
+     * in the ledger.
+     *
+     * If the participant already withdrew this money, this can take their
+     * availableBalance() negative - there's no real way to claw back funds
+     * that already left the platform, so a negative balance is the honest
+     * record of that: they now owe it back, to be recovered from future
+     * earnings or otherwise, rather than the revocation silently failing or
+     * being blocked.
+     */
+    public function revokeReward(User $participant, float $amount, $submission, string $reason, ?User $admin = null): WalletTransaction
+    {
+        return DB::transaction(function () use ($participant, $amount, $submission, $reason, $admin) {
+            $this->walletFor($participant);
+
+            return WalletTransaction::create([
+                'user_id' => $participant->id,
+                'wallet_type' => 'participant',
+                'type' => 'manual_admin_adjustment',
+                'amount' => -abs($amount),
+                'reference_type' => get_class($submission),
+                'reference_id' => $submission->id,
+                'note' => $reason,
+                'created_by' => $admin?->id,
+            ]);
+        });
+    }
+
+    /**
      * Called by ReferralService the moment a participant they referred
      * completes their one-time activation payment. Credited exactly like a
      * task reward - same wallet, same withdrawal flow - just tagged with a

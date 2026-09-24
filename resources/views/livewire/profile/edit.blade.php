@@ -136,6 +136,7 @@
                     this.theme = this.theme === 'dark' ? 'light' : 'dark';
                     localStorage.setItem('trenakt-theme', this.theme);
                     document.documentElement.setAttribute('data-theme', this.theme);
+                    window.dispatchEvent(new CustomEvent('trenakt-theme-changed', { detail: this.theme }));
                 }
             }" class="flex items-center justify-between gap-3 p-5">
             <div class="flex items-center gap-3">

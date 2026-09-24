@@ -40,6 +40,9 @@ class NotificationBell extends Component
             'withdrawal_processed', 'withdrawal_failed' => route('earnings.index'),
             'referral_reward_earned' => route('earnings.index'),
             'account_activated' => route('tasks.discover'),
+            'user_registered' => route('admin.users.index'),
+            'participant_activated' => route('admin.activation-payments.index'),
+            'business_wallet_funded' => route('admin.wallet-fundings.index'),
             default => null,
         };
     }

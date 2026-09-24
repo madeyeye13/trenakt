@@ -6,9 +6,11 @@ use App\Models\ActivationPayment;
 use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\AccountActivated;
+use App\Notifications\ParticipantActivated;
 use App\Services\ReferralService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 /**
@@ -116,6 +118,12 @@ class ActivationFeeService
 
             $payment->user->notify(new AccountActivated($payment));
             $this->referrals->rewardReferrerFor($payment->user);
+
+            $admins = User::permission('manage-activation-payments')->get();
+
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new ParticipantActivated($payment));
+            }
 
             return $payment;
         });

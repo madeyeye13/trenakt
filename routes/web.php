@@ -12,26 +12,66 @@ Route::get('/', function () {
     return view('marketing.home');
 });
 
-Route::view('/terms', 'legal.placeholder', ['title' => 'Terms of Service'])->name('terms');
-Route::view('/privacy', 'legal.placeholder', ['title' => 'Privacy Policy'])->name('privacy');
+Route::get('/terms', function () {
+    return view('legal.show', [
+        'title' => 'Terms of Service',
+        'content' => \App\Models\Setting::get('terms_content', \App\Support\DefaultLegalContent::terms()),
+    ]);
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return view('legal.show', [
+        'title' => 'Privacy Policy',
+        'content' => \App\Models\Setting::get('privacy_content', \App\Support\DefaultLegalContent::privacy()),
+    ]);
+})->name('privacy');
 
 //ADMIN ROUTES
 Route::domain('admin.trenakt.test')->group(function () {
     Route::get('/login', \App\Livewire\Admin\LoginForm::class)->middleware('guest')->name('admin.login');
 
     Route::middleware(['auth', 'admin'])->group(function () {
+        // No permission middleware on these two: the dashboard is every
+        // staff member's landing page, and "my account" (password/email)
+        // has to be reachable by anyone who can log in at all, whatever
+        // else their role permits.
         Route::get('/', \App\Livewire\Admin\Dashboard::class)->name('admin.dashboard');
-        Route::get('/categories', \App\Livewire\Admin\Categories\Index::class)->name('admin.categories.index');
-        Route::get('/categories/create', \App\Livewire\Admin\Categories\Form::class)->name('admin.categories.create');
-        Route::get('/categories/{category}/edit', \App\Livewire\Admin\Categories\Form::class)->name('admin.categories.edit');
-        Route::get('/campaigns', \App\Livewire\Admin\Campaigns\Index::class)->name('admin.campaigns.index');
-        Route::get('/campaigns/{campaign}', \App\Livewire\Admin\Campaigns\Show::class)->name('admin.campaigns.show');
-        Route::get('/submissions', \App\Livewire\Admin\Submissions\Index::class)->name('admin.submissions.index');
-        Route::get('/rejection-reasons', \App\Livewire\Admin\RejectionReasons\Index::class)->name('admin.rejection-reasons.index');
-        Route::get('/withdrawals', \App\Livewire\Admin\Withdrawals\Index::class)->name('admin.withdrawals.index');
-        Route::get('/activation-payments', \App\Livewire\Admin\ActivationPayments\Index::class)->name('admin.activation-payments.index');
-        Route::get('/countries', \App\Livewire\Admin\Countries\Index::class)->name('admin.countries.index');
-        Route::get('/settings', \App\Livewire\Admin\Settings\Index::class)->name('admin.settings.index');
+        Route::get('/account', \App\Livewire\Admin\Account\Edit::class)->name('admin.account.edit');
+
+        Route::middleware('permission:manage-categories')->group(function () {
+            Route::get('/categories', \App\Livewire\Admin\Categories\Index::class)->name('admin.categories.index');
+            Route::get('/categories/create', \App\Livewire\Admin\Categories\Form::class)->name('admin.categories.create');
+            Route::get('/categories/{category}/edit', \App\Livewire\Admin\Categories\Form::class)->name('admin.categories.edit');
+        });
+
+        Route::middleware('permission:manage-campaigns')->group(function () {
+            Route::get('/campaigns', \App\Livewire\Admin\Campaigns\Index::class)->name('admin.campaigns.index');
+            Route::get('/campaigns/{campaign}', \App\Livewire\Admin\Campaigns\Show::class)->name('admin.campaigns.show');
+        });
+
+        Route::get('/submissions', \App\Livewire\Admin\Submissions\Index::class)->name('admin.submissions.index')
+            ->middleware('permission:verify-submissions');
+        Route::get('/rejection-reasons', \App\Livewire\Admin\RejectionReasons\Index::class)->name('admin.rejection-reasons.index')
+            ->middleware('permission:manage-rejection-reasons');
+        Route::get('/withdrawals', \App\Livewire\Admin\Withdrawals\Index::class)->name('admin.withdrawals.index')
+            ->middleware('permission:manage-withdrawals');
+        Route::get('/activation-payments', \App\Livewire\Admin\ActivationPayments\Index::class)->name('admin.activation-payments.index')
+            ->middleware('permission:manage-activation-payments');
+        Route::get('/wallet-fundings', \App\Livewire\Admin\WalletFundings\Index::class)->name('admin.wallet-fundings.index')
+            ->middleware('permission:manage-wallet-fundings');
+        Route::get('/countries', \App\Livewire\Admin\Countries\Index::class)->name('admin.countries.index')
+            ->middleware('permission:manage-countries');
+        Route::get('/settings', \App\Livewire\Admin\Settings\Index::class)->name('admin.settings.index')
+            ->middleware('permission:manage-settings');
+        Route::get('/legal-pages', \App\Livewire\Admin\LegalPages\Index::class)->name('admin.legal-pages.index')
+            ->middleware('permission:manage-settings');
+
+        Route::get('/users', \App\Livewire\Admin\Users\Index::class)->name('admin.users.index')
+            ->middleware('permission:manage-users');
+        Route::get('/staff', \App\Livewire\Admin\Staff\Index::class)->name('admin.staff.index')
+            ->middleware('permission:manage-staff');
+        Route::get('/roles', \App\Livewire\Admin\Roles\Index::class)->name('admin.roles.index')
+            ->middleware('permission:manage-roles');
     });
 });
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Admin Console — Trenakt' }}</title>
+    <title>{{ $title ?? 'Admin' }} &middot; Trenakt</title>
     <meta name="robots" content="noindex, nofollow">
     <script>
         (function () {
@@ -15,27 +15,20 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="bg-trenakt-dark text-white antialiased min-h-screen flex items-center justify-center px-4"
-    style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0); background-size: 24px 24px;">
-
+<body class="bg-trenakt-bg dark:bg-trenakt-dark text-trenakt-dark dark:text-white antialiased min-h-screen flex items-center justify-center p-6">
     <div class="w-full max-w-sm">
         <div class="flex flex-col items-center mb-8">
-            <div class="w-14 h-14 rounded-xl bg-white/5 border border-white/10 text-trenakt-accent flex items-center justify-center mb-4">
-                <x-icon name="shield" class="w-7 h-7" />
+            <div class="w-12 h-12 rounded-xl bg-trenakt-dark/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-trenakt-accent flex items-center justify-center mb-3">
+                <x-icon name="shield" class="w-6 h-6" />
             </div>
-            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-trenakt-accent mb-1">Restricted access</p>
-            <h1 class="text-lg font-bold">Trenakt Admin Console</h1>
+            <p class="text-sm font-bold text-trenakt-dark dark:text-white">Trenakt</p>
+            <p class="text-[10px] uppercase tracking-wide text-gray-400 dark:text-white/40 mt-0.5">Admin console</p>
         </div>
 
-        <div class="bg-trenakt-surface-dark border border-white/10 rounded-xl shadow-2xl p-6 sm:p-8">
-            {{ $slot }}
-        </div>
-
-        <p class="text-center text-[11px] text-white/30 mt-6">
-            Authorized personnel only. All access is logged.
-        </p>
+        {{ $slot }}
     </div>
 
+    <x-toast-container />
     @livewireScripts
 </body>
 </html>

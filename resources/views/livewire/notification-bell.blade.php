@@ -36,15 +36,16 @@
                     $isUnread = is_null($notification->read_at);
                     $type = $notification->data['type'] ?? null;
                     $typeIcon = match ($type) {
-                        'campaign_approved', 'task_approved', 'withdrawal_processed', 'referral_reward_earned', 'account_activated' => 'check-circle',
+                        'campaign_approved', 'task_approved', 'withdrawal_processed', 'referral_reward_earned', 'account_activated', 'participant_activated' => 'check-circle',
                         'campaign_rejected', 'task_rejected', 'withdrawal_failed' => 'x-circle',
                         'campaign_pending_review', 'campaign_submitted', 'task_submission_received' => 'briefcase',
-                        'wallet_funded' => 'wallet',
+                        'wallet_funded', 'business_wallet_funded' => 'wallet',
                         'wallet_funding_failed' => 'alert-triangle',
+                        'user_registered' => 'user-plus',
                         default => 'bell',
                     };
                     $typeClass = match ($type) {
-                        'campaign_approved', 'wallet_funded', 'task_approved', 'withdrawal_processed', 'referral_reward_earned', 'account_activated' => 'bg-trenakt-success-light text-trenakt-success',
+                        'campaign_approved', 'wallet_funded', 'business_wallet_funded', 'task_approved', 'withdrawal_processed', 'referral_reward_earned', 'account_activated', 'participant_activated' => 'bg-trenakt-success-light text-trenakt-success',
                         'campaign_rejected', 'wallet_funding_failed', 'task_rejected', 'withdrawal_failed' => 'bg-trenakt-danger/10 text-trenakt-danger',
                         default => 'bg-trenakt-primary-light dark:bg-white/5 text-trenakt-primary',
                     };

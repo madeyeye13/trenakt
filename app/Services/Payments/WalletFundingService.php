@@ -3,9 +3,12 @@
 namespace App\Services\Payments;
 
 
+use App\Models\User;
 use App\Models\WalletFundingRequest;
 use App\Models\WalletTransaction;
+use App\Notifications\BusinessWalletFunded;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 
 class WalletFundingService
@@ -69,6 +72,12 @@ class WalletFundingService
             $this->wallet->fund($locked->user, $locked->amount, 'NGN', $locked);
 
             $locked->user->notify(new \App\Notifications\WalletFunded($locked));
+
+            $admins = User::permission('manage-wallet-fundings')->get();
+
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new BusinessWalletFunded($locked));
+            }
 
             return true;
         });

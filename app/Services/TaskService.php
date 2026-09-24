@@ -6,13 +6,12 @@ use App\Models\Campaign;
 use App\Models\CampaignSubmission;
 use App\Models\RejectionReason;
 use App\Models\User;
+use App\Notifications\RewardRevoked;
 use App\Notifications\TaskApproved;
 use App\Notifications\TaskRejected;
-use App\Notifications\TaskSubmissionReceived;
 use App\Services\Payments\ActivationFeeService;
 use App\Services\Verification\SubmissionVerifier;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class TaskService
@@ -161,18 +160,22 @@ class TaskService
             ]);
         });
 
-        $reviewers = User::role(['admin', 'super_admin'])->get();
-
-        if ($reviewers->isNotEmpty()) {
-            Notification::send($reviewers, new TaskSubmissionReceived($submission));
-        }
-
+        // Notifying reviewers is the verifier's job now, not this method's -
+        // see HumanReviewVerifier (notifies immediately, every time) and
+        // VerifySubmissionWithAi (only notifies when AI couldn't resolve it
+        // on its own). That split is what lets AI mode avoid pinging admins
+        // about submissions it ends up handling by itself.
         $verifier->verify($submission);
 
         return $submission;
     }
 
-    public function approve(CampaignSubmission $submission, User $admin): void
+    /**
+     * $admin is accepted for context/future auditing but never used in the
+     * body below - nullable so the AI verifier's queued job can call this
+     * the same way an admin's own click does, without a real acting user.
+     */
+    public function approve(CampaignSubmission $submission, ?User $admin = null): void
     {
         if ($submission->status !== 'submitted') {
             throw ValidationException::withMessages([
@@ -192,7 +195,12 @@ class TaskService
         $submission->participant->notify(new TaskApproved($submission));
     }
 
-    public function reject(CampaignSubmission $submission, User $admin, RejectionReason $reason, ?string $note = null): void
+    /**
+     * $admin is accepted for context/future auditing but never used in the
+     * body below - nullable so the AI verifier's queued job can call this
+     * the same way an admin's own click does, without a real acting user.
+     */
+    public function reject(CampaignSubmission $submission, ?User $admin, RejectionReason $reason, ?string $note = null): void
     {
         if ($submission->status !== 'submitted') {
             throw ValidationException::withMessages([
@@ -216,5 +224,42 @@ class TaskService
         // reverse. The participant is simply free to attempt this campaign
         // again (see participantIsEligible()).
         $submission->participant->notify(new TaskRejected($submission));
+    }
+
+    /**
+     * Claws back a reward on a submission that was already approved and
+     * paid. The submission's status stays 'approved' - see the migration
+     * that adds reward_revoked_at - so this does not free up the campaign's
+     * capacity or let the participant resubmit; only a genuine rejection at
+     * review time does that (see participantIsEligible()).
+     *
+     * $admin is nullable for the same reason approve()/reject() accept a
+     * nullable one, even though only an admin's own click calls this today.
+     */
+    public function revokeReward(CampaignSubmission $submission, ?User $admin, string $reason): void
+    {
+        if ($submission->status !== 'approved') {
+            throw ValidationException::withMessages([
+                'submission' => 'Only an approved submission with a paid reward can have it revoked.',
+            ]);
+        }
+
+        if ($submission->reward_revoked_at) {
+            throw ValidationException::withMessages([
+                'submission' => 'This reward has already been revoked.',
+            ]);
+        }
+
+        DB::transaction(function () use ($submission, $admin, $reason) {
+            $this->wallet->revokeReward($submission->participant, (float) $submission->campaign->rate_per_participant, $submission, $reason, $admin);
+
+            $submission->forceFill([
+                'reward_revoked_at' => now(),
+                'reward_revocation_reason' => $reason,
+                'revoked_by' => $admin?->id,
+            ])->save();
+        });
+
+        $submission->participant->notify(new RewardRevoked($submission));
     }
 }

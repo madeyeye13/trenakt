@@ -39,4 +39,24 @@ return [
         'key' => env('EXCHANGERATE_API_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | OpenAI (AI-assisted verification)
+    |--------------------------------------------------------------------------
+    |
+    | Unlike every service above, the key Trenakt actually uses is set at
+    | runtime by a Super Admin from Settings > Submission verification and
+    | stored encrypted in the database (see Setting::getEncrypted()) - that's
+    | the whole point, so it can be rotated without a redeploy. These env
+    | values are only a fallback OpenAiEvaluator reaches for if nothing has
+    | been configured in Settings yet (handy for local/dev bootstrapping).
+    |
+    */
+
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'timeout' => env('OPENAI_TIMEOUT', 20),
+    ],
+
 ];
