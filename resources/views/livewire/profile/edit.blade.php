@@ -2,7 +2,7 @@
     $isComplete = $user->hasCompleteParticipantProfile();
 @endphp
 
-<div class="max-w-2xl">
+<div x-data="{ logoutOpen: false }" class="max-w-2xl">
     <div class="mb-6">
         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-1">Account</p>
         <h1 class="text-2xl font-bold">Your profile</h1>
@@ -151,12 +151,35 @@
             </button>
         </div>
 
-        <button type="button" @click="$store.logoutConfirm.open = true"
+        <button type="button" @click="logoutOpen = true"
             class="w-full flex items-center gap-3 p-5 text-left">
             <div class="w-9 h-9 rounded-full bg-trenakt-danger/10 text-trenakt-danger flex items-center justify-center shrink-0">
                 <x-icon name="logout" class="w-4.5 h-4.5" />
             </div>
             <p class="text-sm font-medium text-trenakt-danger">Log out</p>
         </button>
+    </div>
+
+    <div x-show="logoutOpen" x-cloak
+        x-on:keydown.escape.window="logoutOpen = false"
+        class="fixed inset-0 z-50 overflow-y-auto scrollbar-brand">
+        <div class="fixed inset-0 bg-black/40" @click="logoutOpen = false"></div>
+
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div @click.stop x-show="logoutOpen" x-transition
+                class="relative bg-white dark:bg-trenakt-surface-dark rounded-lg shadow-xl w-full max-w-sm p-6">
+                <h3 class="text-lg font-semibold mb-2">Log out?</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You'll need to sign back in to access your account.</p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="logoutOpen = false" class="text-sm font-medium text-gray-500">Cancel</button>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="bg-trenakt-danger text-white text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition">
+                            Yes, log out
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
