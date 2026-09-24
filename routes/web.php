@@ -27,7 +27,7 @@ Route::get('/privacy', function () {
 })->name('privacy');
 
 //ADMIN ROUTES
-Route::domain('admin.trenakt.test')->group(function () {
+Route::domain(config('app.admin_domain'))->group(function () {
     Route::get('/login', \App\Livewire\Admin\LoginForm::class)->middleware('guest')->name('admin.login');
 
     Route::middleware(['auth', 'admin'])->group(function () {

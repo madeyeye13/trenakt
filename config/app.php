@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Console Domain
+    |--------------------------------------------------------------------------
+    |
+    | The admin console lives on its own subdomain, matched in routes/web.php
+    | via Route::domain(). This is env-driven so local (.test) and production
+    | (.site) can each set their own value without touching route code.
+    |
+    */
+
+    'admin_domain' => env('ADMIN_DOMAIN', 'admin.trenakt.test'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
