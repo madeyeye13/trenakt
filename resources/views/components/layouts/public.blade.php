@@ -12,8 +12,12 @@
 
     <script>
         (function () {
-            var theme = localStorage.getItem('trenakt-theme') || 'light';
-            document.documentElement.setAttribute('data-theme', theme);
+            function applyTheme() {
+                var theme = localStorage.getItem('trenakt-theme') || 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            applyTheme();
+            document.addEventListener('livewire:navigated', applyTheme);
         })();
     </script>
 

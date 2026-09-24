@@ -199,7 +199,7 @@
                     {{ auth()->user()->roles->map(fn ($role) => str($role->name)->replace('_', ' ')->title())->join(', ') ?: 'No role assigned' }}
                 </p>
             </div>
-            <button type="button" @click.prevent.stop="$dispatch('open-modal', { name: 'confirm-logout' })"
+            <button type="button" @click.prevent.stop="$store.logoutConfirm.open = true"
                 class="text-gray-400 dark:text-white/40 hover:text-trenakt-dark dark:hover:text-white transition shrink-0" title="Log out">
                 <x-icon name="logout" class="w-4.5 h-4.5" />
             </button>
@@ -207,16 +207,29 @@
     </div>
 </aside>
 
-<x-modal name="confirm-logout" maxWidth="sm">
-    <h3 class="text-lg font-semibold mb-2">Log out?</h3>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You'll need to sign back in to get back to the admin console.</p>
-    <div class="flex justify-end gap-3">
-        <button type="button" @click="$dispatch('close-modal')" class="text-sm font-medium text-gray-500">Cancel</button>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="bg-trenakt-danger text-white text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition">
-                Yes, log out
-            </button>
-        </form>
+{{-- See the matching note in resources/views/components/sidebar-nav.blade.php: this
+     reads the Alpine.store('logoutConfirm', ...) in app.js directly instead of the
+     shared <x-modal> component's window-event ('open-modal'/'close-modal') mechanism,
+     which isn't reliably rebound the instant a wire:navigate transition finishes. --}}
+<div x-show="$store.logoutConfirm.open" x-cloak
+    x-on:keydown.escape.window="$store.logoutConfirm.open = false"
+    class="fixed inset-0 z-50 overflow-y-auto scrollbar-brand">
+    <div class="fixed inset-0 bg-black/40" @click="$store.logoutConfirm.open = false"></div>
+
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div @click.stop x-show="$store.logoutConfirm.open" x-transition
+            class="relative bg-white dark:bg-trenakt-surface-dark rounded-lg shadow-xl w-full max-w-sm p-6">
+            <h3 class="text-lg font-semibold mb-2">Log out?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">You'll need to sign back in to get back to the admin console.</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" @click="$store.logoutConfirm.open = false" class="text-sm font-medium text-gray-500">Cancel</button>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="bg-trenakt-danger text-white text-sm font-medium rounded-md px-4 py-2 hover:opacity-90 transition">
+                        Yes, log out
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
-</x-modal>
+</div>

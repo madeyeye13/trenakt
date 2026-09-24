@@ -58,6 +58,7 @@
                         <x-icon name="eye-slash" class="w-4 h-4" x-show="show" x-cloak />
                     </button>
                 </div>
+                <p class="text-xs text-gray-400 mt-1">Must be at least 8 characters, with uppercase, lowercase, a number, and a symbol.</p>
                 @error('password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
 

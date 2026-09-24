@@ -48,12 +48,12 @@
                         description="Check back soon, or adjust your search and filters." />
                 </div>
             @else
-                <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     @foreach ($campaigns as $campaign)
                         @php
                             $spotsLeft = $campaign->target_participants - $campaign->active_submissions_count;
                         @endphp
-                        <article class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5 flex flex-col">
+                        <article class="min-w-0 bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5 flex flex-col">
                             <div class="flex items-start justify-between gap-3 mb-3">
                                 <div class="min-w-0">
                                     <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $campaign->category->name }}</p>
@@ -80,7 +80,7 @@
             @endif
         </div>
 
-        <div wire:loading.grid wire:target="search,category" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" style="gap: 1rem;">
+        <div wire:loading.grid wire:target="search,category" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" style="gap: 1rem;">
             @for ($i = 0; $i < 6; $i++)
                 <x-skeleton-card class="min-h-[170px]" />
             @endfor

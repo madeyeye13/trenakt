@@ -56,6 +56,25 @@
         </div>
     </div>
 
+    <div class="flex items-center justify-between mb-3">
+        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40">Income vs withdrawals</p>
+        <button type="button" wire:click="exportCsv" wire:loading.attr="disabled" wire:target="exportCsv"
+            class="inline-flex items-center justify-center border border-gray-200 dark:border-white/10 text-xs font-medium rounded-md px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition disabled:opacity-60">
+            <span wire:loading.remove wire:target="exportCsv">Export CSV</span>
+            <span wire:loading wire:target="exportCsv">Preparing...</span>
+        </button>
+    </div>
+    <div class="min-w-0 bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5 mb-8">
+        <x-chart type="line" wire:key="income-vs-withdrawals"
+            :labels="$incomeVsWithdrawals['labels']"
+            :datasets="[
+                ['label' => 'Income', 'data' => $incomeVsWithdrawals['income']],
+                ['label' => 'Withdrawals', 'data' => $incomeVsWithdrawals['withdrawals']],
+            ]"
+            :currency="true"
+            :height="260" />
+    </div>
+
     <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 dark:border-white/10">
             <p class="text-sm font-semibold">Recent activity</p>

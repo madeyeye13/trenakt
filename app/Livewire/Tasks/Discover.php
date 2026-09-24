@@ -140,14 +140,12 @@ class Discover extends Component
     {
         $rule = $field->is_required ? ['required'] : ['nullable'];
 
-        $rule[] = match ($field->type) {
-            'url' => 'url',
-            'number' => 'numeric',
-            'file' => 'file|max:5120',
-            default => 'string|max:2000',
-        };
-
-        return $rule;
+        return array_merge($rule, match ($field->type) {
+            'url' => ['url'],
+            'number' => ['numeric'],
+            'file' => ['file', 'max:5120'],
+            default => ['string', 'max:2000'],
+        });
     }
 
     /**

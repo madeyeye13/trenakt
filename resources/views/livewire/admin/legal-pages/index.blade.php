@@ -14,7 +14,7 @@
                 <a href="{{ route('terms') }}" target="_blank" class="text-xs text-trenakt-accent hover:underline">View live page</a>
             </div>
             <textarea wire:model="termsContent" rows="14"
-                class="w-full mt-1 border border-gray-300 dark:border-white/10 dark:bg-white/5 rounded-md px-3 py-2.5 text-sm leading-relaxed focus:outline-none focus:border-trenakt-accent resize-y"></textarea>
+                class="scrollbar-brand w-full mt-1 border border-gray-300 dark:border-white/10 dark:bg-white/5 rounded-md px-3 py-2.5 text-sm leading-relaxed focus:outline-none focus:border-trenakt-accent resize-y"></textarea>
             @error('termsContent') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
@@ -24,7 +24,7 @@
                 <a href="{{ route('privacy') }}" target="_blank" class="text-xs text-trenakt-accent hover:underline">View live page</a>
             </div>
             <textarea wire:model="privacyContent" rows="14"
-                class="w-full mt-1 border border-gray-300 dark:border-white/10 dark:bg-white/5 rounded-md px-3 py-2.5 text-sm leading-relaxed focus:outline-none focus:border-trenakt-accent resize-y"></textarea>
+                class="scrollbar-brand w-full mt-1 border border-gray-300 dark:border-white/10 dark:bg-white/5 rounded-md px-3 py-2.5 text-sm leading-relaxed focus:outline-none focus:border-trenakt-accent resize-y"></textarea>
             @error('privacyContent') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 

@@ -7,8 +7,12 @@
     <meta name="robots" content="noindex, nofollow">
     <script>
         (function () {
-            var theme = localStorage.getItem('trenakt-admin-theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', theme);
+            function applyTheme() {
+                var theme = localStorage.getItem('trenakt-admin-theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            applyTheme();
+            document.addEventListener('livewire:navigated', applyTheme);
         })();
     </script>
     <link rel="icon" type="image/png" href="{{ asset('images/Favicon.png') }}">

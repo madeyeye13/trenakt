@@ -151,7 +151,7 @@
             </button>
         </div>
 
-        <button type="button" @click="$dispatch('open-modal', { name: 'confirm-logout' })"
+        <button type="button" @click="$store.logoutConfirm.open = true"
             class="w-full flex items-center gap-3 p-5 text-left">
             <div class="w-9 h-9 rounded-full bg-trenakt-danger/10 text-trenakt-danger flex items-center justify-center shrink-0">
                 <x-icon name="logout" class="w-4.5 h-4.5" />

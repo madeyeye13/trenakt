@@ -27,6 +27,19 @@ function formatNaira(value) {
 // changed it — instead of leaving the chart stuck at whatever theme was
 // active when it was first drawn.
 document.addEventListener('alpine:init', () => {
+    // Global, DOM-independent state for the logout confirmation. It used to
+    // be a per-page x-data island driven by a window CustomEvent
+    // ('open-modal' / 'close-modal'), which only works if Alpine has
+    // finished destroying the previous page's listener and re-binding a
+    // fresh one on the new page before the click happens. Right after a
+    // wire:navigate transition (including a mode switch, which itself
+    // navigates to /dashboard) that rebind isn't guaranteed to have
+    // completed yet, so the click could fire into a moment where nothing
+    // was listening - the reported "click logout, nothing happens" bug.
+    // An Alpine store lives in Alpine's own registry, not on any one DOM
+    // node, so it survives every navigation without needing to be rebound.
+    Alpine.store('logoutConfirm', { open: false });
+
     Alpine.data('trenaktChart', (config) => ({
         themeObserver: null,
         themeListener: null,
