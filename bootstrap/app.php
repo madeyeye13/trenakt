@@ -14,6 +14,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trusts the reverse proxy chain (Traefik -> nginx) so Laravel reads
+        // X-Forwarded-Proto correctly: without this, requests arrive at
+        // PHP-FPM as plain HTTP (Traefik terminates TLS upstream), and
+        // Laravel would think every request is insecure, breaking secure
+        // cookies and https:// URL generation. Safe to trust '*' here since
+        // nginx/php-fpm sit on a private Docker network only Traefik can
+        // reach, not the public internet.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'business' => \App\Http\Middleware\EnsureBusinessMode::class,
@@ -22,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
-            return $request->getHost() === 'admin.trenakt.test'
+            return $request->getHost() === config('app.admin_domain')
                 ? route('admin.login')
                 : route('login');
         });
