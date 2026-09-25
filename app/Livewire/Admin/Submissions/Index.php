@@ -156,6 +156,16 @@ class Index extends Component
             ? app(ParticipantWalletService::class)->availableBalance($selectedSubmission->participant)
             : null;
 
+        $participantFields = $selectedSubmission?->campaign->category->requirementFields->where('fills_for', 'participant') ?? collect();
+
+        // Same reasoning as Campaigns\Submissions::render(): a post-mode
+        // campaign's generic category url field is never filled in
+        // (Discover::submit() skips it in favour of platform_links below),
+        // so don't show an empty "No answer provided" box for it here.
+        if ($selectedSubmission?->campaign->task_mode) {
+            $participantFields = $participantFields->reject(fn ($field) => $field->type === 'url');
+        }
+
         return view('livewire.admin.submissions.index', [
             'submissions' => $submissions,
             'counts' => [
@@ -165,8 +175,15 @@ class Index extends Component
                 'rejected' => (int) $counts->rejected,
             ],
             'selectedSubmission' => $selectedSubmission,
-            'participantFields' => $selectedSubmission?->campaign->category->requirementFields->where('fills_for', 'participant') ?? collect(),
+            'participantFields' => $participantFields,
             'customFields' => $selectedSubmission?->campaign->customFields ?? collect(),
+            // platform => label for the per-platform links a post-mode
+            // campaign collected, keyed the same as answers.platform_links.
+            'platformLinks' => $selectedSubmission?->campaign->task_mode
+                ? collect($selectedSubmission->campaign->platforms ?? [])->mapWithKeys(
+                    fn ($platform) => [$platform => \App\Livewire\Campaigns\Create::PLATFORMS[$platform] ?? ucfirst($platform)]
+                )
+                : collect(),
             'reasons' => RejectionReason::active()->get(),
             'participantBalance' => $participantBalance,
         ])->layout('components.layouts.admin', ['title' => 'Submissions']);

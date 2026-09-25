@@ -1,7 +1,14 @@
 <div>
-    <div class="mb-6">
-        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-1">Promoting</p>
-        <h1 class="text-2xl font-bold">Create campaign</h1>
+    <div class="mb-6 flex items-start justify-between gap-4">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-1">Promoting</p>
+            <h1 class="text-2xl font-bold">Create campaign</h1>
+        </div>
+        <button type="button" @click="$dispatch('open-modal', { name: 'campaign-guidelines' })"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-trenakt-primary hover:underline shrink-0 mt-1">
+            <x-icon name="info-circle" class="w-3.5 h-3.5" />
+            Posting guidelines
+        </button>
     </div>
 
     <div class="lg:flex lg:gap-8 lg:items-start">
@@ -112,10 +119,95 @@
                         </div>
                     @endif
                 </div>
+
+                <div class="flex items-start gap-3 border-t border-gray-100 dark:border-white/10 pt-4">
+                    <x-toggle model="allow_admin_edit" :checked="$allow_admin_edit" />
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium">Allow Trenakt to refine my instructions before approval</label>
+                            <button type="button" @click="$dispatch('open-modal', { name: 'admin-edit-info' })" class="text-xs font-medium text-trenakt-primary hover:underline shrink-0">Why?</button>
+                        </div>
+                        <p class="text-xs text-gray-400 dark:text-white/40 mt-1">If checked, our review team may lightly tighten your title, description, or steps for clarity before approving. You'll always be able to see what changed.</p>
+                    </div>
+                </div>
             </div>
 
+            @if ($category->supports_post_modes)
+                <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5"
+                    x-data="{ mode: $wire.entangle('task_mode'), selectedPlatforms: $wire.entangle('platforms') }">
+                    <h2 class="text-sm font-semibold">3. How should participants share this?</h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" @click="mode = 'reshare'"
+                            :class="mode === 'reshare' ? 'border-trenakt-primary bg-trenakt-primary/5' : 'border-gray-200 dark:border-white/10 hover:border-gray-300'"
+                            class="text-left border rounded-md p-4 transition">
+                            <p class="text-sm font-semibold text-trenakt-dark dark:text-white">Reshare an existing post</p>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Participants share a post you already have live. Uses the link submission flow you're used to.</p>
+                        </button>
+                        <button type="button" @click="mode = 'post_own_content'"
+                            :class="mode === 'post_own_content' ? 'border-trenakt-primary bg-trenakt-primary/5' : 'border-gray-200 dark:border-white/10 hover:border-gray-300'"
+                            class="text-left border rounded-md p-4 transition">
+                            <p class="text-sm font-semibold text-trenakt-dark dark:text-white">Post on their own page</p>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">You supply the caption and a flyer, image, or video. Participants post it as their own content.</p>
+                        </button>
+                    </div>
+                    @error('task_mode') <p class="text-xs text-trenakt-danger">{{ $message }}</p> @enderror
+
+                    <div x-show="mode === 'post_own_content'" x-cloak class="space-y-4 pt-2 border-t border-gray-100 dark:border-white/10">
+                        <div>
+                            <label class="text-sm font-medium">Caption / text to post</label>
+                            <textarea wire:model="post_content_text" rows="3" placeholder="Exactly what you want participants to post as the caption"
+                                class="w-full mt-1.5 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary"></textarea>
+                            @error('post_content_text') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">Flyer, image, or video</label>
+                            <input wire:model="post_content_media" type="file" accept="image/*,video/*"
+                                class="w-full mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Up to 20MB. Images are automatically compressed for you; keep the file well under that if you can, for a faster upload.</p>
+                            <div wire:loading wire:target="post_content_media" class="text-xs text-trenakt-primary mt-1">Uploading...</div>
+                            @error('post_content_media') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-100 dark:border-white/10">
+                        <label class="text-sm font-medium mb-1.5 block">Where should this be posted?</label>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (\App\Livewire\Campaigns\Create::PLATFORMS as $key => $label)
+                                <button type="button"
+                                    @click="selectedPlatforms.includes('{{ $key }}') ? selectedPlatforms.splice(selectedPlatforms.indexOf('{{ $key }}'), 1) : selectedPlatforms.push('{{ $key }}')"
+                                    :class="selectedPlatforms.includes('{{ $key }}') ? 'border-trenakt-primary bg-trenakt-primary/10 text-trenakt-primary' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400'"
+                                    class="text-xs font-medium border rounded-full px-3 py-1.5 transition">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        </div>
+                        @error('platforms') <p class="text-xs text-trenakt-danger mt-2">{{ $message }}</p> @enderror
+                        @if ((float) $category->platform_bonus_amount > 0)
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-2">Selecting more than one platform adds ₦{{ number_format($category->platform_bonus_amount, 2) }} to the participant rate for each platform beyond the first.</p>
+                        @endif
+                    </div>
+
+                    <div x-show="mode === 'reshare'" x-cloak class="space-y-4 pt-2 border-t border-gray-100 dark:border-white/10">
+                        <div>
+                            <p class="text-sm font-medium">Link to the post to reshare, per platform</p>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">The same post has a different link on each platform, so give the link for each one you selected above.</p>
+                        </div>
+                        @foreach (\App\Livewire\Campaigns\Create::PLATFORMS as $key => $label)
+                            <div x-show="selectedPlatforms.includes('{{ $key }}')" x-cloak>
+                                <label class="text-sm font-medium">{{ $label }} post link</label>
+                                <input wire:model="platformSourceLinks.{{ $key }}" type="url" placeholder="https://..."
+                                    class="w-full mt-1.5 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary">
+                                @error('platformSourceLinks.' . $key) <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5">
-                <h2 class="text-sm font-semibold">3. Pricing & reach</h2>
+                <h2 class="text-sm font-semibold">4. Pricing & reach</h2>
 
                 <x-range-slider label="Rate per participant" model="rate_per_participant" :min="(float) $category->min_rate" :max="(float) $category->max_rate" :step="50" :value="$rate_per_participant" suffix=" NGN" />
                 @error('rate_per_participant') <p class="text-xs text-trenakt-danger">{{ $message }}</p> @enderror
@@ -124,11 +216,19 @@
                 @error('target_participants') <p class="text-xs text-trenakt-danger">{{ $message }}</p> @enderror
             </div>
 
-            @if ($category->requirementFields->where('fills_for', 'business')->isNotEmpty())
+            {{-- $businessFields already excludes the category's generic
+                url-type field for any post-mode category (supports_post_modes)
+                - see Create::businessFieldsFor(). That's based on the
+                category alone, which is chosen via a real request (see the
+                category-select buttons above), so it's already correct here
+                with no extra reactivity needed - unlike task_mode/platforms,
+                which are chosen client-side and need the $wire.entangle
+                instant-update pattern used in card 3 above. --}}
+            @if ($businessFields->isNotEmpty())
                 <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5">
-                    <h2 class="text-sm font-semibold">4. Information participants will need</h2>
+                    <h2 class="text-sm font-semibold">5. Information participants will need</h2>
 
-                    @foreach ($category->requirementFields->where('fills_for', 'business') as $field)
+                    @foreach ($businessFields as $field)
                         <div>
                             <label class="text-sm font-medium">{{ $field->label }} @if($field->is_required)<span class="text-trenakt-danger">*</span>@endif</label>
 
@@ -153,7 +253,7 @@
             @if ($category->requirementFields->where('fills_for', 'participant')->isNotEmpty())
                 <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-4">
                     <div>
-                        <h2 class="text-sm font-semibold">5. What participants will submit</h2>
+                        <h2 class="text-sm font-semibold">6. What participants will submit</h2>
                         <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Set for the "{{ $category->name }}" category and applied to every campaign in it. Participants fill these in when they complete the task, not you.</p>
                     </div>
 
@@ -176,7 +276,7 @@
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-sm font-semibold">6. Anything else to ask? (optional)</h2>
+                        <h2 class="text-sm font-semibold">7. Anything else to ask? (optional)</h2>
                         <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Add extra questions just for this campaign, on top of what the category already asks for.</p>
                     </div>
                     <button type="button" wire:click="addCustomField" class="text-xs font-medium text-trenakt-primary">+ Add question</button>
@@ -207,7 +307,7 @@
             </div>
 
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5">
-                <h2 class="text-sm font-semibold">7. Targeting</h2>
+                <h2 class="text-sm font-semibold">8. Targeting</h2>
 
                 <div>
                     <label class="text-sm font-medium mb-1.5 block">Countries</label>
@@ -261,6 +361,16 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30">Budget</p>
 
                 <div class="space-y-2 text-sm">
+                    @if (($budget['platform_bonus'] ?? 0) > 0)
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 dark:text-white/40">Rate per participant</span>
+                            <span class="font-medium text-trenakt-dark dark:text-white">₦{{ number_format($budget['base_rate'], 2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 dark:text-white/40">Multi-platform bonus</span>
+                            <span class="font-medium text-trenakt-dark dark:text-white">+₦{{ number_format($budget['platform_bonus'], 2) }}</span>
+                        </div>
+                    @endif
                     <div class="flex items-center justify-between">
                         <span class="text-gray-400 dark:text-white/40">Participant payouts</span>
                         <span class="font-medium text-trenakt-dark dark:text-white">₦{{ number_format($budget['subtotal'], 2) }}</span>
@@ -342,6 +452,51 @@
                 <span wire:loading.remove wire:target="fundWallet">Continue to payment</span>
                 <span wire:loading wire:target="fundWallet">Connecting...</span>
             </button>
+        </div>
+    </x-modal>
+
+    <x-modal name="campaign-guidelines" maxWidth="md">
+        <div class="flex items-start justify-between gap-4 mb-4">
+            <h3 class="text-lg font-semibold">Before you create a campaign</h3>
+            <button type="button" wire:click="acknowledgeGuidelines" @click="$dispatch('close-modal')" class="text-gray-400 hover:text-trenakt-dark dark:hover:text-white shrink-0" title="Close">
+                <x-icon name="x" class="w-5 h-5" />
+            </button>
+        </div>
+
+        <div class="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+            <div>
+                <p class="font-medium text-trenakt-success mb-1">Do</p>
+                <ul class="space-y-1 text-gray-500 dark:text-gray-400">
+                    <li>Describe a real product, service, or action for participants to genuinely engage with.</li>
+                    <li>Write clear, honest steps that match what you're actually asking participants to do.</li>
+                    <li>Fund your wallet with money you're prepared to spend on real campaign payouts.</li>
+                </ul>
+            </div>
+            <div>
+                <p class="font-medium text-trenakt-danger mb-1">Don't</p>
+                <ul class="space-y-1 text-gray-500 dark:text-gray-400">
+                    <li>Run scams, Ponzi or pyramid schemes, or anything designed to defraud participants.</li>
+                    <li>Post nudity, sexual content, or anything else that violates the law or another party's rights.</li>
+                    <li>Ask participants to do something different from what your campaign says.</li>
+                </ul>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-white/40 pt-1">
+                An account found doing any of this may be suspended or permanently blocked, and money already funded to your wallet cannot be withdrawn.
+            </p>
+        </div>
+
+        <div class="flex justify-end mt-6">
+            <button type="button" wire:click="acknowledgeGuidelines" @click="$dispatch('close-modal')" class="bg-trenakt-primary text-white text-sm font-medium rounded-md px-4 py-2">I understand</button>
+        </div>
+    </x-modal>
+
+    <x-modal name="admin-edit-info" maxWidth="md">
+        <h3 class="text-lg font-semibold mb-2">Why we ask this</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Sometimes campaign instructions aren't clear enough for participants to follow correctly, even when you know exactly what you mean. That leads to submissions that don't match what you wanted, wasted budget for you, and participants who don't get paid for work they thought was right.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">If you allow it, our review team may lightly tighten the wording of your title, description, or steps before approving, never your price, targeting, or what you're asking participants to do. You'll always be able to see exactly what was changed.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">If you leave this off, we'll only approve or reject your campaign as written. A rejected campaign can always be edited and resubmitted by you.</p>
+        <div class="flex justify-end mt-6">
+            <button type="button" @click="$dispatch('close-modal')" class="bg-trenakt-primary text-white text-sm font-medium rounded-md px-4 py-2">Got it</button>
         </div>
     </x-modal>
 

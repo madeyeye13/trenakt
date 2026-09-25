@@ -8,6 +8,7 @@ use App\Models\RejectionReason;
 use App\Models\User;
 use App\Notifications\RewardRevoked;
 use App\Notifications\TaskApproved;
+use App\Notifications\TaskApprovedRewardPending;
 use App\Notifications\TaskRejected;
 use App\Services\Payments\ActivationFeeService;
 use App\Services\Verification\SubmissionVerifier;
@@ -174,6 +175,15 @@ class TaskService
      * $admin is accepted for context/future auditing but never used in the
      * body below - nullable so the AI verifier's queued job can call this
      * the same way an admin's own click does, without a real acting user.
+     *
+     * When the submission's category has requires_monitoring on, the
+     * reward is deliberately NOT credited here - the submission is marked
+     * 'approved' with monitoring_status='holding' instead, and
+     * SubmissionMonitoringService (run by the submissions:monitor-links
+     * scheduled command) either credits it once monitoring_minutes passes
+     * with the participant's link(s) still confirmed live, or forfeits it
+     * if one is found removed first. Every category without that flag set
+     * behaves exactly as before: reward credited immediately.
      */
     public function approve(CampaignSubmission $submission, ?User $admin = null): void
     {
@@ -183,16 +193,31 @@ class TaskService
             ]);
         }
 
-        DB::transaction(function () use ($submission, $admin) {
-            $this->wallet->creditReward($submission->participant, (float) $submission->campaign->rate_per_participant, $submission);
+        $category = $submission->campaign->category;
+        $requiresMonitoring = (bool) ($category->requires_monitoring && $category->monitoring_minutes);
 
-            $submission->forceFill([
+        DB::transaction(function () use ($submission, $requiresMonitoring, $category) {
+            $fill = [
                 'status' => 'approved',
                 'reviewed_at' => now(),
-            ])->save();
+            ];
+
+            if ($requiresMonitoring) {
+                $fill['monitoring_status'] = 'holding';
+                $fill['monitoring_started_at'] = now();
+                $fill['monitoring_ends_at'] = now()->addMinutes($category->monitoring_minutes);
+            } else {
+                $this->wallet->creditReward($submission->participant, (float) $submission->campaign->rate_per_participant, $submission);
+            }
+
+            $submission->forceFill($fill)->save();
         });
 
-        $submission->participant->notify(new TaskApproved($submission));
+        if ($requiresMonitoring) {
+            $submission->participant->notify(new TaskApprovedRewardPending($submission));
+        } else {
+            $submission->participant->notify(new TaskApproved($submission));
+        }
     }
 
     /**

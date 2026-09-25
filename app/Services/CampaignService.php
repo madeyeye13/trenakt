@@ -16,12 +16,33 @@ class CampaignService
     {
     }
 
-    public function calculateBudget(CampaignCategory $category, float $rate, int $participants): array
+    /**
+     * $platformCount only matters for a category with supports_post_modes
+     * on (see its migration) - every other category always calls this
+     * with the default of 1, so platform_bonus is always 0 and this
+     * behaves exactly as it did before platform selection existed.
+     *
+     * The bonus for platformCount > 1 is (platformCount - 1) *
+     * category.platform_bonus_amount, added straight onto the rate the
+     * business picked. The resulting effective_rate is what actually gets
+     * stored as the campaign's rate_per_participant and paid out per
+     * approved submission - the bonus raises what participants earn, not
+     * just what the business is charged.
+     */
+    public function calculateBudget(CampaignCategory $category, float $rate, int $participants, int $platformCount = 1): array
     {
-        $subtotal = round($rate * $participants, 2);
+        $platformBonus = $platformCount > 1
+            ? round(($platformCount - 1) * (float) $category->platform_bonus_amount, 2)
+            : 0.0;
+
+        $effectiveRate = round($rate + $platformBonus, 2);
+        $subtotal = round($effectiveRate * $participants, 2);
         $fee = round($subtotal * ($category->platform_fee_percentage / 100), 2);
 
         return [
+            'base_rate' => round($rate, 2),
+            'platform_bonus' => $platformBonus,
+            'effective_rate' => $effectiveRate,
             'subtotal' => $subtotal,
             'fee' => $fee,
             'total' => round($subtotal + $fee, 2),

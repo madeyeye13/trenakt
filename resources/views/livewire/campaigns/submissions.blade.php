@@ -28,7 +28,22 @@
         </div>
     </div>
 
-    <div wire:loading.remove wire:target="page" class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+    <div wire:loading.remove wire:target="page,status" class="flex flex-wrap gap-2 mb-4">
+        @foreach ([
+            'all' => 'All',
+            'submitted' => 'Pending review',
+            'approved' => 'Approved',
+            'rejected' => 'Rejected',
+        ] as $key => $label)
+            <button type="button" wire:click="$set('status', '{{ $key }}')"
+                class="text-xs font-medium border rounded-full px-3 py-1.5 transition
+                    {{ $status === $key ? 'border-trenakt-primary bg-trenakt-primary/10 text-trenakt-primary' : 'border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400' }}">
+                {{ $label }} ({{ $counts[$key] }})
+            </button>
+        @endforeach
+    </div>
+
+    <div wire:loading.remove wire:target="page,status" class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
         @if ($submissions->isEmpty())
             <x-empty-state icon="user" title="No submissions yet"
                 description="When participants complete this campaign, their answers will appear here for review." />
@@ -104,21 +119,43 @@
             </div>
 
             <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-brand">
+                @foreach ($platformLinks as $platform => $label)
+                    @php $answer = data_get($selectedSubmission->answers, 'platform_links.' . $platform); @endphp
+                    <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
+                        <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $label }} post link</p>
+                        @if ($answer)
+                            <a href="{{ $answer }}" target="_blank" rel="noopener" class="text-sm text-trenakt-primary hover:underline break-all">{{ $answer }}</a>
+                        @else
+                            <p class="text-sm whitespace-pre-wrap">No answer provided</p>
+                        @endif
+                    </div>
+                @endforeach
+
                 @foreach ($participantFields as $field)
+                    @php $answer = data_get($selectedSubmission->answers, (string) $field->id); @endphp
                     <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
                         <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $field->label }}</p>
-                        <p class="text-sm whitespace-pre-wrap">{{ data_get($selectedSubmission->answers, (string) $field->id, 'No answer provided') }}</p>
+                        @if ($field->type === 'url' && $answer)
+                            <a href="{{ $answer }}" target="_blank" rel="noopener" class="text-sm text-trenakt-primary hover:underline break-all">{{ $answer }}</a>
+                        @else
+                            <p class="text-sm whitespace-pre-wrap">{{ $answer ?: 'No answer provided' }}</p>
+                        @endif
                     </div>
                 @endforeach
 
                 @foreach ($customFields as $field)
+                    @php $answer = data_get($selectedSubmission->answers, $field->field_key); @endphp
                     <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
                         <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $field->label }}</p>
-                        <p class="text-sm whitespace-pre-wrap">{{ data_get($selectedSubmission->answers, $field->field_key, 'No answer provided') }}</p>
+                        @if ($field->type === 'url' && $answer)
+                            <a href="{{ $answer }}" target="_blank" rel="noopener" class="text-sm text-trenakt-primary hover:underline break-all">{{ $answer }}</a>
+                        @else
+                            <p class="text-sm whitespace-pre-wrap">{{ $answer ?: 'No answer provided' }}</p>
+                        @endif
                     </div>
                 @endforeach
 
-                @if ($participantFields->isEmpty() && $customFields->isEmpty())
+                @if ($participantFields->isEmpty() && $customFields->isEmpty() && $platformLinks->isEmpty())
                     <x-empty-state icon="info-circle" title="No participant fields" description="This campaign has no participant requirements." />
                 @endif
             </div>

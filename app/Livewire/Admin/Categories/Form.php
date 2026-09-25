@@ -21,6 +21,30 @@ class Form extends Component
     public bool $is_active = true;
     public array $requirementFields = [];
 
+    /**
+     * When on, campaigns in this category get the "reshare vs post on
+     * your own page" choice and a platform multi-select at creation - see
+     * the migration that adds this column. platform_bonus_amount is the
+     * flat NGN amount added to the participant rate for each platform a
+     * business selects beyond the first.
+     */
+    public bool $supports_post_modes = false;
+    public float $platform_bonus_amount = 0;
+
+    /**
+     * When on, a submission's reward is held instead of paid the moment
+     * it's approved - see TaskService::approve() and
+     * SubmissionMonitoringService. monitoring_duration_value/_unit are
+     * form-only helpers so the admin can type "24 hours" or "30 minutes"
+     * instead of doing the minutes math themselves; save() converts
+     * whichever they picked into the plain monitoring_minutes integer the
+     * database actually stores, so the hold length is never hardcoded to
+     * one unit.
+     */
+    public bool $requires_monitoring = false;
+    public int $monitoring_duration_value = 24;
+    public string $monitoring_duration_unit = 'hours';
+
     public function mount(?CampaignCategory $category = null): void
     {
         if ($category) {
@@ -33,6 +57,22 @@ class Form extends Component
             $this->min_participants = $category->min_participants;
             $this->max_participants = $category->max_participants;
             $this->is_active = $category->is_active;
+            $this->supports_post_modes = $category->supports_post_modes;
+            $this->platform_bonus_amount = (float) $category->platform_bonus_amount;
+            $this->requires_monitoring = $category->requires_monitoring;
+
+            if ($category->monitoring_minutes) {
+                // Show it in whichever unit divides evenly, so a category
+                // saved as "24 hours" doesn't come back showing "1440
+                // minutes" on the next edit.
+                if ($category->monitoring_minutes % 60 === 0) {
+                    $this->monitoring_duration_value = (int) ($category->monitoring_minutes / 60);
+                    $this->monitoring_duration_unit = 'hours';
+                } else {
+                    $this->monitoring_duration_value = $category->monitoring_minutes;
+                    $this->monitoring_duration_unit = 'minutes';
+                }
+            }
 
             $this->requirementFields = $category->requirementFields()->orderBy('sort_order')->get()
                 ->map(fn ($field) => [
@@ -78,11 +118,18 @@ class Form extends Component
             'platform_fee_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
             'min_participants' => ['required', 'integer', 'min:1'],
             'max_participants' => ['nullable', 'integer', 'min:1', 'gte:min_participants'],
+            'platform_bonus_amount' => ['required', 'numeric', 'min:0'],
+            'monitoring_duration_value' => ['required_if:requires_monitoring,true', 'nullable', 'integer', 'min:1'],
+            'monitoring_duration_unit' => ['required_if:requires_monitoring,true', 'in:minutes,hours'],
             'requirementFields.*.label' => ['required', 'string', 'max:255'],
             'requirementFields.*.type' => ['required', 'in:text,textarea,file,url,number'],
         ]);
 
-        DB::transaction(function () {
+        $monitoringMinutes = $this->requires_monitoring
+            ? ($this->monitoring_duration_unit === 'hours' ? $this->monitoring_duration_value * 60 : $this->monitoring_duration_value)
+            : null;
+
+        DB::transaction(function () use ($monitoringMinutes) {
             $category = CampaignCategory::updateOrCreate(
                 ['id' => $this->categoryId],
                 [
@@ -97,6 +144,10 @@ class Form extends Component
                     'max_participants' => $this->max_participants,
                     'platform_fee_percentage' => $this->platform_fee_percentage,
                     'is_active' => $this->is_active,
+                    'supports_post_modes' => $this->supports_post_modes,
+                    'platform_bonus_amount' => $this->supports_post_modes ? $this->platform_bonus_amount : 0,
+                    'requires_monitoring' => $this->supports_post_modes && $this->requires_monitoring,
+                    'monitoring_minutes' => $this->supports_post_modes ? $monitoringMinutes : null,
                 ]
             );
 

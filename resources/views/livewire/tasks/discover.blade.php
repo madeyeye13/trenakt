@@ -142,6 +142,44 @@
                     </div>
                 @endif
 
+                @if ($selectedCampaign->task_mode === 'post_own_content')
+                    <div class="bg-trenakt-primary-light dark:bg-white/5 rounded-lg p-3.5">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-trenakt-primary mb-2">Content to post</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Post exactly this caption and file as your own content on each platform you're completing this for.</p>
+                        @if ($selectedCampaign->post_content_text)
+                            <p class="text-sm whitespace-pre-wrap bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-md p-3 mb-3">{{ $selectedCampaign->post_content_text }}</p>
+                        @endif
+                        @if ($selectedCampaign->post_content_media)
+                            @php $mediaUrl = \Illuminate\Support\Facades\Storage::url($selectedCampaign->post_content_media); @endphp
+                            @if (\Illuminate\Support\Str::endsWith($selectedCampaign->post_content_media, ['.mp4', '.mov', '.webm']))
+                                <video controls class="w-full rounded-md max-h-64 bg-black">
+                                    <source src="{{ $mediaUrl }}">
+                                </video>
+                            @else
+                                <img src="{{ $mediaUrl }}" alt="Content to post" class="w-full rounded-md max-h-64 object-contain bg-white dark:bg-white/5">
+                            @endif
+                        @endif
+                    </div>
+                @endif
+
+                @if ($reshareSourceLinks->isNotEmpty())
+                    <div class="bg-gray-50 dark:bg-white/5 rounded-lg p-3.5">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-2">Posts to reshare</p>
+                        <div class="space-y-2">
+                            @foreach ($reshareSourceLinks as $link)
+                                <div class="text-sm">
+                                    <span class="text-gray-500 dark:text-gray-400">{{ $link['label'] }}:</span>
+                                    @if ($link['url'])
+                                        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="text-trenakt-primary font-medium hover:underline break-all">{{ $link['url'] }}</a>
+                                    @else
+                                        <span class="text-gray-400">Not provided</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 @if ($businessInfo->isNotEmpty())
                     <div class="bg-gray-50 dark:bg-white/5 rounded-lg p-3.5">
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-2">Resources</p>
@@ -168,10 +206,16 @@
                         <p class="text-sm whitespace-pre-wrap">{{ $selectedCampaign->description ?: 'No description provided.' }}</p>
                     </div>
 
-                    @if ($participantFields->isNotEmpty() || $customFields->isNotEmpty())
+                    @if ($participantFields->isNotEmpty() || $customFields->isNotEmpty() || $platformLinks->isNotEmpty())
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40 mb-2">You'll be asked for</p>
                             <ul class="space-y-1.5">
+                                @foreach ($platformLinks as $label)
+                                    <li class="text-sm flex items-center gap-2">
+                                        <span class="w-1 h-1 rounded-full bg-gray-400 shrink-0"></span>
+                                        {{ $label }} post link
+                                    </li>
+                                @endforeach
                                 @foreach ($participantFields as $field)
                                     <li class="text-sm flex items-center gap-2">
                                         <span class="w-1 h-1 rounded-full bg-gray-400 shrink-0"></span>
@@ -215,6 +259,24 @@
                     @endif
                 @else
                     <form wire:submit="submit" class="space-y-4">
+                        @if ($platformLinks->isNotEmpty())
+                            <div class="bg-gray-50 dark:bg-white/5 rounded-lg p-3.5 space-y-3">
+                                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/40">
+                                    Link to your post on each platform
+                                </p>
+                                @foreach ($platformLinks as $platform => $label)
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+                                            {{ $label }} post link
+                                        </label>
+                                        <input wire:model="answers.platform_links.{{ $platform }}" type="url" placeholder="https://..."
+                                            class="w-full border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary">
+                                        @error('answers.platform_links.' . $platform) <p class="text-xs text-trenakt-danger mt-1.5">{{ $message }}</p> @enderror
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
                         @foreach ($participantFields as $field)
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
@@ -253,7 +315,7 @@
                             </div>
                         @endforeach
 
-                        @if ($participantFields->isEmpty() && $customFields->isEmpty())
+                        @if ($participantFields->isEmpty() && $customFields->isEmpty() && $platformLinks->isEmpty())
                             <p class="text-sm text-gray-500 dark:text-gray-400">No additional details are needed, just submit to complete this task.</p>
                         @endif
 

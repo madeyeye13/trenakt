@@ -89,6 +89,13 @@
                             <p class="text-xs text-trenakt-danger line-clamp-2 mb-4">{{ $campaign->rejection_reason }}</p>
                         @endif
 
+                        @if ($campaign->admin_edited_at)
+                            <p class="text-xs text-gray-400 dark:text-white/40 mb-4">
+                                Refined by our team on {{ $campaign->admin_edited_at->format('M j, Y') }} &middot;
+                                <button type="button" wire:click="viewOriginal({{ $campaign->id }})" class="text-trenakt-primary hover:underline">See what changed</button>
+                            </p>
+                        @endif
+
                         <div class="mt-auto flex items-center justify-between gap-3 pt-1">
                             <span class="text-xs text-gray-400 dark:text-white/40">{{ $campaign->created_at->format('M j, Y') }}</span>
                             <div class="flex items-center gap-3">
@@ -137,4 +144,59 @@
             </article>
         @endfor
     </div>
+
+    <x-modal name="original-content" maxWidth="lg">
+        @if ($viewingOriginal)
+            <h3 class="text-lg font-semibold mb-1">What our team changed</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                Edited {{ $viewingOriginal->admin_edited_at->format('M j, Y g:ia') }}{{ $viewingOriginal->adminEditor ? ' by ' . $viewingOriginal->adminEditor->name : '' }}. Your original wording is on the left, what's live today is on the right.
+            </p>
+
+            <div class="space-y-5 max-h-[60vh] overflow-y-auto pr-1 scrollbar-brand">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-2">Title</p>
+                    <div class="grid sm:grid-cols-2 gap-3 text-sm">
+                        <p class="border border-gray-100 dark:border-white/10 rounded-md px-3 py-2 whitespace-pre-wrap">{{ data_get($viewingOriginal->original_content, 'title', $viewingOriginal->title) }}</p>
+                        <p class="border border-trenakt-primary/30 bg-trenakt-primary/5 rounded-md px-3 py-2 whitespace-pre-wrap">{{ $viewingOriginal->title }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-2">Description</p>
+                    <div class="grid sm:grid-cols-2 gap-3 text-sm">
+                        <p class="border border-gray-100 dark:border-white/10 rounded-md px-3 py-2 whitespace-pre-wrap">{{ data_get($viewingOriginal->original_content, 'description', $viewingOriginal->description) }}</p>
+                        <p class="border border-trenakt-primary/30 bg-trenakt-primary/5 rounded-md px-3 py-2 whitespace-pre-wrap">{{ $viewingOriginal->description }}</p>
+                    </div>
+                </div>
+
+                @php
+                    $originalSteps = data_get($viewingOriginal->original_content, 'steps') ?? $viewingOriginal->steps ?? [];
+                    $currentSteps = $viewingOriginal->steps ?? [];
+                @endphp
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-2">Steps</p>
+                    <div class="grid sm:grid-cols-2 gap-3 text-sm">
+                        <div class="border border-gray-100 dark:border-white/10 rounded-md px-3 py-2">
+                            @forelse ($originalSteps as $i => $step)
+                                <p class="mb-1 last:mb-0">{{ $i + 1 }}. {{ $step }}</p>
+                            @empty
+                                <p class="text-gray-400 dark:text-white/40">No steps</p>
+                            @endforelse
+                        </div>
+                        <div class="border border-trenakt-primary/30 bg-trenakt-primary/5 rounded-md px-3 py-2">
+                            @forelse ($currentSteps as $i => $step)
+                                <p class="mb-1 last:mb-0">{{ $i + 1 }}. {{ $step }}</p>
+                            @empty
+                                <p class="text-gray-400 dark:text-white/40">No steps</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button type="button" @click="$dispatch('close-modal')" class="text-sm font-medium text-gray-500">Close</button>
+            </div>
+        @endif
+    </x-modal>
 </div>

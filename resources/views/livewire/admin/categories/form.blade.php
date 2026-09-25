@@ -49,6 +49,52 @@
             </div>
         </div>
 
+        <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6 space-y-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold">Reshare vs. post-on-own-page</h2>
+                    <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Lets a business choose whether participants reshare an existing post, or post the business's own supplied content instead. Only relevant for social-sharing categories.</p>
+                </div>
+                <x-toggle model="supports_post_modes" :checked="$supports_post_modes" />
+            </div>
+
+            @if ($supports_post_modes)
+                <div class="pt-2 border-t border-gray-100 dark:border-white/10">
+                    <label class="text-sm font-medium">Bonus per extra platform</label>
+                    <div class="relative mt-1.5">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">₦</span>
+                        <input wire:model="platform_bonus_amount" type="number" min="0" step="10"
+                            class="w-full border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md pl-7 pr-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary">
+                    </div>
+                    <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Added to the participant rate for each social platform a business selects beyond the first (e.g. selecting 3 platforms adds this amount twice). Set to 0 for no bonus.</p>
+                    @error('platform_bonus_amount') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="pt-4 border-t border-gray-100 dark:border-white/10">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium">Monitor the post before paying out</h3>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">Instead of paying the reward the moment a submission is approved, hold it and watch the participant's link. If it's deleted or made private before the window ends, the reward is never released.</p>
+                        </div>
+                        <x-toggle model="requires_monitoring" :checked="$requires_monitoring" />
+                    </div>
+
+                    @if ($requires_monitoring)
+                        <div class="mt-4">
+                            <label class="text-sm font-medium">Monitoring window</label>
+                            <div class="grid grid-cols-2 gap-3 mt-1.5">
+                                <input wire:model="monitoring_duration_value" type="number" min="1"
+                                    class="w-full border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-primary">
+                                <x-select model="monitoring_duration_unit" :options="['minutes' => 'Minutes', 'hours' => 'Hours']" :selected="$monitoring_duration_unit" />
+                            </div>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mt-1">How long after approval a submission's reward stays on hold. Participants are told this when their submission is approved, and again if the reward is released or forfeited.</p>
+                            @error('monitoring_duration_value') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
+                </div>
+            @endif
+        </div>
+
         <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-6">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-sm font-semibold">Requirement fields</h2>
@@ -123,6 +169,18 @@
                     <span class="text-gray-400 dark:text-white/40">Requirement fields</span>
                     <span class="font-medium text-trenakt-dark dark:text-white">{{ count($requirementFields) }}</span>
                 </div>
+                @if ($supports_post_modes)
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-400 dark:text-white/40">Platform bonus</span>
+                        <span class="font-medium text-trenakt-dark dark:text-white">+₦{{ number_format($platform_bonus_amount) }} / extra platform</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-400 dark:text-white/40">Reward monitoring</span>
+                        <span class="font-medium {{ $requires_monitoring ? 'text-trenakt-primary' : 'text-gray-400 dark:text-white/40' }}">
+                            {{ $requires_monitoring ? $monitoring_duration_value . ' ' . $monitoring_duration_unit . ' hold' : 'Off' }}
+                        </span>
+                    </div>
+                @endif
             </div>
         </div>
 

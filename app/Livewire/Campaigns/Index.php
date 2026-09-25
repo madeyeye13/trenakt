@@ -13,6 +13,7 @@ class Index extends Component
 
     public string $status = 'all';
     public string $search = '';
+    public ?int $viewingOriginalId = null;
 
     public function updatedStatus(): void
     {
@@ -22,6 +23,26 @@ class Index extends Component
     public function updatedSearch(): void
     {
         $this->resetPage();
+    }
+
+    /**
+     * Opens the "what our team changed" modal for a campaign the business
+     * owns and that has actually been edited (admin_edited_at set). Scoped
+     * to their own campaigns the same way showSubmission()-style methods
+     * elsewhere in the app are, so this can't be used to peek at another
+     * business's original_content by guessing an id.
+     */
+    public function viewOriginal(int $campaignId): void
+    {
+        $this->viewingOriginalId = Campaign::query()
+            ->where('user_id', auth()->id())
+            ->whereKey($campaignId)
+            ->whereNotNull('admin_edited_at')
+            ->value('id');
+
+        if ($this->viewingOriginalId) {
+            $this->dispatch('open-modal', name: 'original-content');
+        }
     }
 
     public function render()
@@ -44,6 +65,10 @@ class Index extends Component
             SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed
         ")->first();
 
+        $viewingOriginal = $this->viewingOriginalId
+            ? Campaign::find($this->viewingOriginalId)
+            : null;
+
         return view('livewire.campaigns.index', [
             'campaigns' => $campaigns,
             'counts' => [
@@ -53,6 +78,7 @@ class Index extends Component
                 'rejected' => (int) $counts->rejected,
                 'completed' => (int) $counts->completed,
             ],
+            'viewingOriginal' => $viewingOriginal,
         ])->layout('components.layouts.app', ['title' => 'Campaigns']);
     }
 }

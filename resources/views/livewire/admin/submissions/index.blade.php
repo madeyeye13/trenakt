@@ -36,12 +36,19 @@
                 @foreach ($submissions as $submission)
                     @php
                         $statusClass = match (true) {
+                            $submission->monitoring_status === 'forfeited' => 'bg-trenakt-danger/10 text-trenakt-danger',
+                            $submission->monitoring_status === 'holding' => 'bg-trenakt-warning-light text-trenakt-warning',
                             $submission->status === 'approved' && $submission->reward_revoked_at => 'bg-trenakt-danger/10 text-trenakt-danger',
                             $submission->status === 'approved' => 'bg-trenakt-success-light text-trenakt-success',
                             $submission->status === 'rejected' => 'bg-trenakt-danger/10 text-trenakt-danger',
                             default => 'bg-trenakt-warning-light text-trenakt-warning',
                         };
-                        $statusLabel = $submission->status === 'approved' && $submission->reward_revoked_at ? 'Revoked' : ucfirst($submission->status);
+                        $statusLabel = match (true) {
+                            $submission->monitoring_status === 'forfeited' => 'Reward forfeited',
+                            $submission->monitoring_status === 'holding' => 'Reward held',
+                            $submission->status === 'approved' && $submission->reward_revoked_at => 'Revoked',
+                            default => ucfirst($submission->status),
+                        };
                     @endphp
                     <button type="button" wire:click="showSubmission({{ $submission->id }})" class="w-full text-left px-5 py-4 hover:bg-gray-50 dark:hover:bg-white/5 transition">
                         <div class="flex items-center justify-between gap-4">
@@ -83,6 +90,18 @@
             </div>
 
             <div class="space-y-4 max-h-[50vh] overflow-y-auto pr-1 mb-5 scrollbar-brand">
+                @foreach ($platformLinks as $platform => $label)
+                    @php $answer = data_get($selectedSubmission->answers, 'platform_links.' . $platform); @endphp
+                    <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
+                        <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $label }} post link</p>
+                        @if ($answer)
+                            <a href="{{ $answer }}" target="_blank" rel="noopener" class="text-sm text-trenakt-accent hover:underline break-all">{{ $answer }}</a>
+                        @else
+                            <p class="text-sm whitespace-pre-wrap">No answer provided</p>
+                        @endif
+                    </div>
+                @endforeach
+
                 @foreach ($participantFields as $field)
                     <div class="border-b border-gray-100 dark:border-white/10 pb-4 last:border-0">
                         <p class="text-xs text-gray-400 dark:text-white/40 mb-1">{{ $field->label }}</p>
@@ -105,7 +124,7 @@
                     </div>
                 @endforeach
 
-                @if ($participantFields->isEmpty() && $customFields->isEmpty())
+                @if ($participantFields->isEmpty() && $customFields->isEmpty() && $platformLinks->isEmpty())
                     <x-empty-state icon="info-circle" title="No submitted fields" description="This campaign has no participant requirements." />
                 @endif
             </div>
@@ -151,7 +170,13 @@
                         <button type="button" wire:click="approve" wire:loading.attr="disabled" wire:target="approve"
                             class="inline-flex items-center gap-1.5 bg-trenakt-success text-white text-sm font-semibold rounded-md px-4 py-2.5 hover:opacity-90 transition disabled:opacity-60">
                             <x-icon name="check" class="w-4 h-4" wire:loading.remove wire:target="approve" />
-                            <span wire:loading.remove wire:target="approve">Approve &amp; pay ₦{{ number_format($selectedSubmission->campaign->rate_per_participant ?? 0, 2) }}</span>
+                            <span wire:loading.remove wire:target="approve">
+                                @if ($selectedSubmission->campaign->category->requires_monitoring ?? false)
+                                    Approve (reward held for monitoring)
+                                @else
+                                    Approve &amp; pay ₦{{ number_format($selectedSubmission->campaign->rate_per_participant ?? 0, 2) }}
+                                @endif
+                            </span>
                             <span wire:loading wire:target="approve">Approving...</span>
                         </button>
                     </div>
@@ -182,7 +207,26 @@
                     </div>
                 </div>
             @elseif ($selectedSubmission->status === 'approved')
-                @if ($selectedSubmission->reward_revoked_at)
+                @if ($selectedSubmission->monitoring_status === 'holding')
+                    <div class="flex items-start gap-3 bg-trenakt-warning-light text-trenakt-warning rounded-lg p-3.5">
+                        <x-icon name="clock" class="w-4.5 h-4.5 shrink-0 mt-0.5" />
+                        <div>
+                            <p class="text-sm font-medium">Reward on hold until {{ $selectedSubmission->monitoring_ends_at->format('M j, Y g:ia') }}</p>
+                            <p class="text-sm mt-1">
+                                Checked {{ $selectedSubmission->monitor_check_attempts }} time(s){{ $selectedSubmission->last_monitor_checked_at ? ', last ' . $selectedSubmission->last_monitor_checked_at->diffForHumans() : '' }}.
+                                Released automatically if the link still checks out when the window ends.
+                            </p>
+                        </div>
+                    </div>
+                @elseif ($selectedSubmission->monitoring_status === 'forfeited')
+                    <div class="flex items-start gap-3 bg-trenakt-danger/10 text-trenakt-danger rounded-lg p-3.5">
+                        <x-icon name="alert-triangle" class="w-4.5 h-4.5 shrink-0 mt-0.5" />
+                        <div>
+                            <p class="text-sm font-medium">Reward forfeited - never released</p>
+                            <p class="text-sm mt-1">{{ $selectedSubmission->monitor_forfeit_reason }}</p>
+                        </div>
+                    </div>
+                @elseif ($selectedSubmission->reward_revoked_at)
                     <div class="flex items-start gap-3 bg-trenakt-danger/10 text-trenakt-danger rounded-lg p-3.5">
                         <x-icon name="alert-triangle" class="w-4.5 h-4.5 shrink-0 mt-0.5" />
                         <div>

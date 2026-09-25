@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Tasks;
 
+use App\Livewire\Campaigns\Create;
 use App\Models\Campaign;
 use App\Models\CampaignCategory;
 use App\Models\CampaignImpression;
@@ -97,7 +98,7 @@ class Discover extends Component
             return;
         }
 
-        $participantFields = $campaign->category->requirementFields->where('fills_for', 'participant');
+        $participantFields = $this->participantFieldsFor($campaign);
         $rules = [];
         $attributes = [];
 
@@ -111,6 +112,16 @@ class Discover extends Component
             $key = "answers.{$field->field_key}";
             $rules[$key] = $this->rulesFor($field);
             $attributes[$key] = $field->label;
+        }
+
+        // Post-mode campaigns (Reshare or Post-your-own-content) need a
+        // separate proof link per platform the business selected - one
+        // generic link isn't enough to prove (or monitor) a share on each
+        // of several platforms at once. See platformLinksFor().
+        foreach ($this->platformLinksFor($campaign) as $platform => $label) {
+            $key = "answers.platform_links.{$platform}";
+            $rules[$key] = ['required', 'url'];
+            $attributes[$key] = "{$label} post link";
         }
 
         $this->validate($rules, [], $attributes);
@@ -146,6 +157,65 @@ class Discover extends Component
             'file' => ['file', 'max:5120'],
             default => ['string', 'max:2000'],
         });
+    }
+
+    /**
+     * The category's generic requirement fields a participant fills in,
+     * with one adjustment: a post-mode campaign (task_mode set) collects
+     * one proof link per selected platform instead (platformLinksFor()
+     * below), so the category's generic url-type field would just be a
+     * confusing duplicate link box and is skipped. Non-url fields (a
+     * screenshot upload, a text answer, etc.) are unaffected.
+     */
+    protected function participantFieldsFor(?Campaign $campaign): Collection
+    {
+        $fields = $campaign?->category->requirementFields->where('fills_for', 'participant') ?? collect();
+
+        if ($campaign?->task_mode) {
+            $fields = $fields->reject(fn ($field) => $field->type === 'url');
+        }
+
+        return $fields;
+    }
+
+    /**
+     * platform => human label for every platform the business selected on
+     * a post-mode campaign, e.g. ['facebook' => 'Facebook']. Empty for a
+     * campaign with no task_mode (nothing to reshare or post). Reuses the
+     * same PLATFORMS list the business picked from at campaign creation,
+     * never a separately hardcoded one.
+     */
+    protected function platformLinksFor(?Campaign $campaign): Collection
+    {
+        if (! $campaign?->task_mode) {
+            return collect();
+        }
+
+        return collect($campaign->platforms ?? [])
+            ->mapWithKeys(fn ($platform) => [$platform => Create::PLATFORMS[$platform] ?? ucfirst($platform)]);
+    }
+
+    /**
+     * platform => ['label' => .., 'url' => ..] for the source post the
+     * business wants reshared on each platform (see
+     * Campaigns\Create::platformSourceLinks) - what the participant needs
+     * to actually go find and reshare. Only ever populated for
+     * task_mode === 'reshare'; empty for post_own_content, where the
+     * business's caption/media (post_content_text/post_content_media) is
+     * the same across every platform, so there's nothing per-platform to
+     * show here.
+     */
+    protected function reshareSourceLinksFor(?Campaign $campaign): Collection
+    {
+        if ($campaign?->task_mode !== 'reshare') {
+            return collect();
+        }
+
+        return collect($campaign->platforms ?? [])
+            ->mapWithKeys(fn ($platform) => [$platform => [
+                'label' => Create::PLATFORMS[$platform] ?? ucfirst($platform),
+                'url' => data_get($campaign->platform_source_links, $platform),
+            ]]);
     }
 
     /**
@@ -199,8 +269,14 @@ class Discover extends Component
             'campaigns' => $candidates,
             'categories' => CampaignCategory::where('is_active', true)->orderBy('name')->pluck('name', 'id'),
             'selectedCampaign' => $selectedCampaign,
-            'participantFields' => $selectedCampaign?->category->requirementFields->where('fills_for', 'participant') ?? collect(),
+            'participantFields' => $this->participantFieldsFor($selectedCampaign),
             'customFields' => $selectedCampaign?->customFields ?? collect(),
+            // platform => label for the per-platform proof-link inputs on
+            // a post-mode campaign; see platformLinksFor().
+            'platformLinks' => $this->platformLinksFor($selectedCampaign),
+            // platform => ['label','url'] for the business's own post to
+            // reshare on each platform; see reshareSourceLinksFor().
+            'reshareSourceLinks' => $this->reshareSourceLinksFor($selectedCampaign),
             // Plain-text, ordered instructions the business wrote at
             // campaign-creation time (e.g. "Click the link above", "Sign up
             // with your real email") - the primary how-to shown to

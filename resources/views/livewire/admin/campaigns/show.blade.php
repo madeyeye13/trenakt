@@ -26,6 +26,9 @@
             <div class="flex items-center gap-2 mt-2 mb-1">
                 <span class="text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 {{ $statusClass }}">{{ $statusLabel }}</span>
                 <span class="text-xs text-gray-400 dark:text-white/40">{{ $campaign->category->name }}</span>
+                @if ($campaign->allow_admin_edit)
+                    <span class="text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 bg-trenakt-accent/15 text-trenakt-accent">Editable</span>
+                @endif
             </div>
             <h1 class="text-2xl font-bold truncate">{{ $campaign->title }}</h1>
             <p class="text-sm text-gray-500 dark:text-white/50 mt-1">
@@ -65,12 +68,118 @@
         </p>
     @endif
 
+    @if ($campaign->admin_edited_at)
+        <p class="text-xs text-gray-400 dark:text-white/40 mb-6">
+            Wording edited by {{ $campaign->adminEditor?->name ?? 'an admin' }} &middot; {{ $campaign->admin_edited_at->format('M j, Y g:ia') }}
+        </p>
+    @endif
+
     <div class="grid lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-3">Description</p>
-                <p class="text-sm whitespace-pre-wrap">{{ $campaign->description ?: 'No description provided.' }}</p>
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30">Campaign content</p>
+                    @if ($campaign->allow_admin_edit && $campaign->status === 'pending_review')
+                        @if (! $isEditing)
+                            <button type="button" wire:click="startEditing" class="text-xs font-medium text-trenakt-accent hover:underline">Edit</button>
+                        @endif
+                    @endif
+                </div>
+
+                @if ($isEditing)
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Title</label>
+                            <input wire:model="editTitle" type="text"
+                                class="w-full mt-1 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-accent">
+                            @error('editTitle') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
+                            <textarea wire:model="editDescription" rows="4"
+                                class="w-full mt-1 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-accent"></textarea>
+                            @error('editDescription') <p class="text-xs text-trenakt-danger mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-medium text-gray-500 dark:text-gray-400">Steps</label>
+                                <button type="button" wire:click="addEditStep" class="text-xs font-medium text-trenakt-accent">+ Add step</button>
+                            </div>
+                            <div class="space-y-2 mt-2">
+                                @foreach ($editSteps as $index => $step)
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-semibold text-gray-400 dark:text-white/40 w-5 shrink-0">{{ $index + 1 }}.</span>
+                                        <input wire:model="editSteps.{{ $index }}" type="text"
+                                            class="w-full border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-trenakt-accent">
+                                        <button type="button" wire:click="removeEditStep({{ $index }})" class="text-gray-300 hover:text-trenakt-danger transition shrink-0">
+                                            <x-icon name="x" class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    @error('editSteps.' . $index) <p class="text-xs text-trenakt-danger ml-7">{{ $message }}</p> @enderror
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-1">
+                            <button type="button" wire:click="cancelEditing" wire:loading.attr="disabled" wire:target="saveEdit" class="text-sm font-medium text-gray-500">Cancel</button>
+                            <button type="button" wire:click="saveEdit" wire:loading.attr="disabled" wire:target="saveEdit"
+                                class="bg-trenakt-accent text-white text-sm font-medium rounded-md px-4 py-2 disabled:opacity-60">
+                                <span wire:loading.remove wire:target="saveEdit">Save changes</span>
+                                <span wire:loading wire:target="saveEdit">Saving...</span>
+                            </button>
+                        </div>
+                    </div>
+                @else
+                    <p class="text-sm whitespace-pre-wrap">{{ $campaign->description ?: 'No description provided.' }}</p>
+
+                    @if (! empty($campaign->steps))
+                        <div class="mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                            <p class="text-xs text-gray-400 dark:text-white/40 mb-2">Steps for participants</p>
+                            <ol class="space-y-1 text-sm list-decimal list-inside">
+                                @foreach ($campaign->steps as $step)
+                                    <li>{{ $step }}</li>
+                                @endforeach
+                            </ol>
+                        </div>
+                    @endif
+                @endif
             </div>
+
+            @if ($campaign->task_mode)
+                <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-4">How participants share this</p>
+
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Mode</p>
+                            <p class="text-sm font-medium">{{ $campaign->task_mode === 'post_own_content' ? 'Post on their own page' : 'Reshare an existing post' }}</p>
+                        </div>
+                        @if (! empty($campaign->platforms))
+                            <div>
+                                <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Platforms</p>
+                                <p class="text-sm font-medium">{{ collect($campaign->platforms)->map(fn ($p) => \App\Livewire\Campaigns\Create::PLATFORMS[$p] ?? $p)->join(', ') }}</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($campaign->task_mode === 'post_own_content')
+                        <div class="mt-4 pt-4 border-t border-gray-100 dark:border-white/10 space-y-3">
+                            <div>
+                                <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Caption to post</p>
+                                <p class="text-sm whitespace-pre-wrap">{{ $campaign->post_content_text ?: 'No caption provided.' }}</p>
+                            </div>
+                            @if ($campaign->post_content_media)
+                                <div>
+                                    <p class="text-xs text-gray-400 dark:text-white/40 mb-1">Media</p>
+                                    <a href="{{ asset('storage/' . $campaign->post_content_media) }}" target="_blank" class="text-sm text-trenakt-accent hover:underline">View uploaded file</a>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             <div class="bg-white dark:bg-trenakt-surface-dark border border-gray-200 dark:border-white/10 rounded-lg p-5">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-white/30 mb-4">Business-provided requirements</p>

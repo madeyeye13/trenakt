@@ -8,7 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['campaign_id', 'participant_id', 'status', 'answers', 'submitted_at', 'reviewed_at', 'rejection_reason', 'rejection_reason_id', 'reward_revoked_at', 'reward_revocation_reason', 'revoked_by'])]
+#[Fillable([
+    'campaign_id', 'participant_id', 'status', 'answers', 'submitted_at', 'reviewed_at',
+    'rejection_reason', 'rejection_reason_id', 'reward_revoked_at', 'reward_revocation_reason', 'revoked_by',
+    'monitoring_status', 'monitoring_started_at', 'monitoring_ends_at', 'last_monitor_checked_at',
+    'monitor_check_attempts', 'reward_released_at', 'monitor_forfeit_reason',
+])]
 class CampaignSubmission extends Model
 {
     protected function casts(): array
@@ -18,6 +23,10 @@ class CampaignSubmission extends Model
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'reward_revoked_at' => 'datetime',
+            'monitoring_started_at' => 'datetime',
+            'monitoring_ends_at' => 'datetime',
+            'last_monitor_checked_at' => 'datetime',
+            'reward_released_at' => 'datetime',
         ];
     }
 

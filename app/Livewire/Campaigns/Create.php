@@ -11,6 +11,7 @@ use App\Models\Country;
 use App\Services\CampaignService;
 use App\Services\WalletService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\CampaignRequirementAnswer;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,37 @@ class Create extends Component
     public ?int $min_age = 18;
     public ?int $max_age = 65;
     public string $gender = 'any';
+    public bool $allow_admin_edit = false;
+
+    /**
+     * Only ever read/shown when the selected category's supports_post_modes
+     * is on - see the migration that adds it. platforms holds keys from
+     * PLATFORMS below (facebook/instagram/twitter/tiktok); task_mode is
+     * 'reshare' or 'post_own_content'.
+     */
+    public const PLATFORMS = [
+        'facebook' => 'Facebook',
+        'instagram' => 'Instagram',
+        'twitter' => 'X (Twitter)',
+        'tiktok' => 'TikTok',
+    ];
+
+    public ?string $task_mode = null;
+    public array $platforms = [];
+    public string $post_content_text = '';
+    public $post_content_media = null;
+
+    /**
+     * platform => the URL of the business's own already-live post to
+     * reshare on that platform, e.g. ['facebook' => 'https://fb.com/...'].
+     * Only meaningful for task_mode === 'reshare' - the same post has a
+     * different URL on each platform, so one generic link can't cover
+     * more than one selected platform. Not used for post_own_content,
+     * where the business supplies post_content_text/post_content_media
+     * instead (the same caption/media works across every platform since
+     * participants post it themselves, so there's no per-platform link).
+     */
+    public array $platformSourceLinks = [];
 
     public float $fundAmount = 5000;
     public string $fundGateway = 'paystack';
@@ -53,6 +85,26 @@ class Create extends Component
             $toast = session('toast');
             $this->dispatch('toast', type: $toast['type'], message: $toast['message']);
         }
+
+        if (! auth()->user()->campaign_guidelines_acknowledged_at) {
+            $this->dispatch('open-modal', name: 'campaign-guidelines');
+        }
+    }
+
+    /**
+     * Closing the guidelines modal (the X icon or "I understand") both
+     * dismiss it and mark it acknowledged - there's no separate "don't
+     * show this again" checkbox, dismissing IS not showing it again.
+     * Stored on the user row (not browser storage) so it persists across
+     * devices and doubles as a record they were shown the rules.
+     */
+    public function acknowledgeGuidelines(): void
+    {
+        if (! auth()->user()->campaign_guidelines_acknowledged_at) {
+            auth()->user()->forceFill(['campaign_guidelines_acknowledged_at' => now()])->save();
+        }
+
+        $this->dispatch('close-modal', name: 'campaign-guidelines');
     }
 
     public function updatedCampaignCategoryId($value): void
@@ -69,6 +121,30 @@ class Create extends Component
         $this->businessAnswers = [];
         foreach ($category->requirementFields->where('fills_for', 'business') as $field) {
             $this->businessAnswers[$field->id] = null;
+        }
+
+        $this->task_mode = null;
+        $this->platforms = [];
+        $this->post_content_text = '';
+        $this->post_content_media = null;
+        $this->platformSourceLinks = [];
+    }
+
+    public function selectTaskMode(string $mode): void
+    {
+        $this->task_mode = $mode;
+    }
+
+    public function togglePlatform(string $platform): void
+    {
+        if (! array_key_exists($platform, self::PLATFORMS)) {
+            return;
+        }
+
+        if (in_array($platform, $this->platforms, true)) {
+            $this->platforms = array_values(array_diff($this->platforms, [$platform]));
+        } else {
+            $this->platforms[] = $platform;
         }
     }
 
@@ -153,6 +229,16 @@ class Create extends Component
                 'min_age' => $this->min_age,
                 'max_age' => $this->max_age,
                 'gender' => $this->gender,
+                'allow_admin_edit' => $this->allow_admin_edit,
+                'task_mode' => $this->task_mode,
+                'platforms' => $this->platforms,
+                'post_content_text' => $this->post_content_text,
+                'platformSourceLinks' => $this->platformSourceLinks,
+                // post_content_media (an uploaded file) can't survive a
+                // session round-trip the way these plain values can - same
+                // limitation businessAnswers file uploads already have
+                // here, so it's simply not preserved. The business re-
+                // attaches it after returning from payment.
             ],
         ]);
 
@@ -198,7 +284,7 @@ class Create extends Component
             return;
         }
 
-        foreach ($category->requirementFields->where('fills_for', 'business') as $field) {
+        foreach ($this->businessFieldsFor($category) as $field) {
             $value = $this->businessAnswers[$field->id] ?? null;
 
             if ($field->is_required && empty($value)) {
@@ -207,7 +293,41 @@ class Create extends Component
             }
         }
 
-        $budget = $campaignService->calculateBudget($category, $this->rate_per_participant, $this->target_participants);
+        if ($category->supports_post_modes) {
+            $this->validate([
+                'task_mode' => ['required', 'in:reshare,post_own_content'],
+                'platforms' => ['required', 'array', 'min:1'],
+                'platforms.*' => ['in:' . implode(',', array_keys(self::PLATFORMS))],
+            ]);
+
+            if ($this->task_mode === 'post_own_content') {
+                $this->validate([
+                    'post_content_text' => ['required', 'string', 'max:2000'],
+                    'post_content_media' => ['required', 'file', 'mimes:jpg,jpeg,png,gif,webp,mp4,mov,webm', 'max:20480'],
+                ], [
+                    'post_content_media.max' => 'That file is too large. Please keep it under 20MB.',
+                ]);
+            }
+
+            // Reshare needs one source link per selected platform - the
+            // business's own post has a different URL on Facebook than on
+            // Instagram, so a single link can't stand in for all of them.
+            if ($this->task_mode === 'reshare') {
+                $rules = [];
+                $attributes = [];
+
+                foreach ($this->platforms as $platform) {
+                    $key = "platformSourceLinks.{$platform}";
+                    $rules[$key] = ['required', 'url'];
+                    $attributes[$key] = (self::PLATFORMS[$platform] ?? ucfirst($platform)) . ' post link';
+                }
+
+                $this->validate($rules, [], $attributes);
+            }
+        }
+
+        $platformCount = $category->supports_post_modes ? max(1, count($this->platforms)) : 1;
+        $budget = $campaignService->calculateBudget($category, $this->rate_per_participant, $this->target_participants, $platformCount);
 
         try {
             $campaignService->validateMinimumBudget($budget['total']);
@@ -224,6 +344,11 @@ class Create extends Component
                     ->values()
                     ->all();
 
+                $postContentMedia = null;
+                if ($category->supports_post_modes && $this->task_mode === 'post_own_content' && $this->post_content_media) {
+                    $postContentMedia = $this->storeOptimizedMedia($this->post_content_media);
+                }
+
                 $campaign = new Campaign();
                 $campaign->forceFill([
                     'user_id' => auth()->id(),
@@ -231,14 +356,26 @@ class Create extends Component
                     'title' => $this->title,
                     'description' => $this->description,
                     'steps' => $steps ?: null,
-                    'rate_per_participant' => $this->rate_per_participant,
+                    // The bonus for extra platforms (see CampaignService::
+                    // calculateBudget()) is baked into effective_rate here,
+                    // so it's what actually gets paid out per approved
+                    // submission, not just what the business is charged.
+                    'rate_per_participant' => $budget['effective_rate'],
                     'target_participants' => $this->target_participants,
                     'total_budget' => $budget['total'],
                     'platform_fee_amount' => $budget['fee'],
                     'status' => 'draft',
+                    'allow_admin_edit' => $this->allow_admin_edit,
+                    'task_mode' => $category->supports_post_modes ? $this->task_mode : null,
+                    'platforms' => $category->supports_post_modes ? $this->platforms : null,
+                    'post_content_text' => $this->task_mode === 'post_own_content' ? $this->post_content_text : null,
+                    'post_content_media' => $postContentMedia,
+                    'platform_source_links' => ($category->supports_post_modes && $this->task_mode === 'reshare')
+                        ? array_intersect_key($this->platformSourceLinks, array_flip($this->platforms))
+                        : null,
                 ])->save();
 
-                foreach ($category->requirementFields->where('fills_for', 'business') as $field) {
+                foreach ($this->businessFieldsFor($category) as $field) {
                     $value = $this->businessAnswers[$field->id] ?? null;
 
                     if ($field->type === 'file' && $value) {
@@ -300,19 +437,85 @@ class Create extends Component
         $this->redirect(route('dashboard'), navigate: true);
     }
 
+    /**
+     * The category's generic business-facing requirement fields, with one
+     * adjustment: a generic url-type field never applies to a post-mode
+     * category (supports_post_modes), in either mode. Reshare replaces it
+     * with the per-platform source links above (platformSourceLinks) -
+     * one link can't cover several platforms. Post-your-own-content
+     * replaces it with post_content_text/post_content_media - the
+     * business gives the caption and flyer directly, there's no existing
+     * post to link to at all. Either way the generic link field would
+     * just be a leftover, unusable box, so it's hidden as soon as a
+     * post-mode category is selected - not conditioned on task_mode,
+     * since that's chosen afterwards and it's wrong for every value it
+     * could take. Non-url fields (a text note, a file, etc.) are
+     * unaffected either way.
+     */
+    protected function businessFieldsFor(?CampaignCategory $category): \Illuminate\Support\Collection
+    {
+        $fields = $category?->requirementFields->where('fills_for', 'business') ?? collect();
+
+        if ($category?->supports_post_modes) {
+            $fields = $fields->reject(fn ($field) => $field->type === 'url');
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Stores the "post on your own page" flyer/image/video a business
+     * uploads. An image gets scaled down and re-encoded as a compressed
+     * JPEG (quality 80, capped at 1920px on the long edge) so a business
+     * uploading a large photo doesn't quietly balloon our storage; a video
+     * is stored as-is for now - see the max:20480 upload rule above for
+     * why it can't be huge to begin with. Falls back to storing the
+     * original file untouched if Intervention Image isn't installed yet
+     * or optimization fails for any reason, so a missing dependency
+     * degrades gracefully instead of breaking campaign submission.
+     */
+    private function storeOptimizedMedia($file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension());
+        $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+
+        if ($isImage && class_exists(\Intervention\Image\ImageManager::class)) {
+            try {
+                $manager = \Intervention\Image\ImageManager::gd();
+                $image = $manager->read($file->getRealPath());
+                $image->scaleDown(width: 1920);
+                $encoded = $image->toJpeg(quality: 80);
+
+                $path = 'campaign-post-content/' . Str::random(40) . '.jpg';
+                Storage::disk('public')->put($path, (string) $encoded);
+
+                return $path;
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Campaign post-content image optimization failed, storing original: ' . $e->getMessage());
+            }
+        }
+
+        return $file->store('campaign-post-content', 'public');
+    }
+
     public function render(CampaignService $campaignService, WalletService $walletService)
     {
         $category = $this->campaign_category_id
             ? CampaignCategory::with('requirementFields')->find($this->campaign_category_id)
             : null;
 
+        $platformCount = ($category && $category->supports_post_modes)
+            ? max(1, count($this->platforms))
+            : 1;
+
         $budget = $category
-            ? $campaignService->calculateBudget($category, $this->rate_per_participant ?: $category->min_rate, $this->target_participants ?: $category->min_participants)
+            ? $campaignService->calculateBudget($category, $this->rate_per_participant ?: $category->min_rate, $this->target_participants ?: $category->min_participants, $platformCount)
             : null;
 
         return view('livewire.campaigns.create', [
             'categories' => CampaignCategory::where('is_active', true)->orderBy('name')->get(),
             'category' => $category,
+            'businessFields' => $this->businessFieldsFor($category),
             'countries' => Country::where('is_active', true)->orderBy('name')->get(),
             'budget' => $budget,
             'balance' => $walletService->availableBalance(auth()->user()),
